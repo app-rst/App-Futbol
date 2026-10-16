@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.*
+
+# Variables de entorno: NUNCA se suben. Solo el ejemplo.
+.env
+.env.*
+!.env.example
+
+# Next.js
+FrontEnd/.next/
+FrontEnd/out/
+FrontEnd/build/
+FrontEnd/next-env.d.ts
+*.tsbuildinfo
+
+# Supabase CLI (estado local del link al proyecto)
+BackEnd/supabase/.temp/
+BackEnd/supabase/.branches/
+
+# Vercel
+.vercel
+
+# Tests / logs / SO
+coverage/
+npm-debug.log*
+*.pem
+.DS_Store
+Thumbs.db

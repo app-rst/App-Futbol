@@ -1,0 +1,96 @@
+Quiero construir una aplicación web para organizar partidos de fútbol entre amigos.
+Antes de escribir código, armá un plan de implementación completo (arquitectura,
+modelo de datos, pantallas, reglas de negocio y etapas de desarrollo) y mostrámelo
+para que lo apruebe. Si encontrás ambigüedades o casos borde no definidos, listalos
+en el plan con tu propuesta de solución.
+
+## Stack
+- Next.js (App Router) + TypeScript + Tailwind CSS.
+- Diseño mobile-first: la mayoría de los usuarios la va a usar desde el celular.
+  Configurarla como PWA (instalable desde el navegador).
+- Supabase: PostgreSQL + Auth + Row Level Security (RLS) en todas las tablas.
+- Deploy en Vercel.
+- Interfaz en español (Argentina). Zona horaria America/Argentina/Buenos_Aires
+  para mostrar fechas; guardar en UTC.
+
+## Usuarios
+- Registro e inicio de sesión con email + contraseña o con Google.
+- Datos del perfil: email, nombre, apellido, apodo (opcional) y número de celular.
+- Si el usuario entra con Google, la primera vez debe completar los datos faltantes
+  (celular, apodo) antes de poder sumarse a un partido.
+- Los jugadores ven a los demás solo por su apodo (o nombre si no tiene apodo).
+  Email, apellido y celular NO son visibles para otros jugadores; el celular
+  solo lo ve el admin del partido.
+
+## Creación de partido
+- Cualquier usuario puede crear un partido y queda como admin.
+- Datos: lugar, fecha, hora de inicio, hora de fin, cantidad de titulares
+  (mínimo 10), costo total de la cancha y fecha/hora límite de inscripción.
+- El admin puede duplicar un partido anterior: se copian todos los datos
+  (editables antes de guardar) y la lista de jugadores arranca vacía.
+- El admin comparte el partido mediante un link de invitación, con un botón
+  para compartir por WhatsApp (Web Share API con fallback a link de WhatsApp).
+
+## Inscripción, titulares y suplentes
+- Los usuarios registrados se anotan desde el link.
+- Los primeros N inscriptos (N = cantidad de titulares definida por el admin)
+  son titulares; el resto queda en lista de suplentes por orden de inscripción.
+- Si un titular se baja, el primer suplente pasa automáticamente a titular.
+  Esta lógica debe ser atómica en la base de datos (función de Postgres /
+  transacción) para evitar problemas de concurrencia.
+- El admin puede sacar a un jugador de la lista (se aplica la misma regla de
+  promoción de suplentes).
+- La fecha límite de inscripción es informativa: no bloquea anotarse.
+- Costo por jugador = costo de la cancha ÷ cantidad de titulares definida por el
+  admin. Solo se muestra; no se registran pagos.
+
+## Admin
+- Cada partido tiene un único admin: el que lo creó. No existe co-admin ni
+  admin suplente durante la preparación del partido.
+- Si el admin quiere bajarse del partido, es obligatorio que antes elija a otro
+  jugador titular como nuevo admin, que hereda todos los permisos. No puede
+  bajarse sin hacerlo.
+- El admin arma los dos equipos a mano asignando a cada titular a un equipo.
+- El admin puede cancelar el partido en cualquier momento antes del inicio,
+  EXCEPTO cuando la lista de titulares está completa. Si estaba completa y
+  alguien se baja sin suplentes que lo reemplacen, la cancelación vuelve a
+  estar habilitada. Validar esta regla en la base de datos, no solo en la UI.
+
+## Después del partido
+- Una vez pasada la hora de fin, el admin carga el resultado (goles por equipo)
+  y los goleadores (jugador + cantidad de goles).
+- Votación de MVP:
+  - Solo pueden votar los titulares del partido, un voto cada uno, opcional.
+  - No se puede votar a uno mismo.
+  - Se habilita a la hora de fin del partido y cierra 24 horas después.
+  - El voto es ANÓNIMO: nadie, ni siquiera el admin, puede saber quién votó a
+    quién. Diseñar el modelo para que la anonimidad sea real (por ejemplo, una
+    tabla que registra que el usuario ya votó y otra que guarda el voto sin el
+    id del votante, escritas en la misma función de base de datos).
+  - Al cerrar la votación se muestra solo el MVP; si hay empate se muestran
+    todos los empatados.
+
+## Historial
+- Cada usuario puede ver el historial de partidos en los que participó: fecha,
+  lugar, equipos, resultado, goleadores y MVP.
+
+## Fuera de alcance por ahora (no implementar, pero no cerrar la puerta)
+- Notificaciones y recordatorios.
+- Grupos fijos de jugadores.
+- Registro de pagos.
+
+## Forma de trabajo
+- Primero el plan, esperá mi aprobación.
+- Después implementá por etapas (ej.: auth y perfil → crear/compartir partido →
+  inscripción y suplentes → equipos y admin → resultado y MVP → historial),
+  mostrándome el avance al final de cada una.
+- Incluí migraciones SQL de Supabase versionadas, políticas RLS y tests para
+  la lógica crítica (promoción de suplentes, reglas de cancelación, reglas de
+  votación, cálculo de costo).
+- Configurá el .gitignore para no subir variables de entorno y agregá un
+  .env.example. El código se va a publicar en GitHub.
+- Agregá un README con los pasos para crear el proyecto en Supabase, configurar
+  Google Auth, las variables de entorno y deployar en Vercel.
+- En el README, documentá cómo configurar un SMTP propio en Supabase (por
+  ejemplo con Resend) para los mails de autenticación, ya que el SMTP por
+  defecto de Supabase tiene un límite muy bajo y no sirve para producción.

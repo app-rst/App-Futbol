@@ -1,0 +1,22 @@
+{
+  "name": "app-futbol-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:link": "supabase link",
+    "db:push": "supabase db push",
+    "db:new": "supabase migration new",
+    "admin:create": "node --env-file-if-exists=.env scripts/create-system-admin.ts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@supabase/supabase-js": "^2.118.0",
+    "@types/node": "^24.19.2",
+    "supabase": "^2.121.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
