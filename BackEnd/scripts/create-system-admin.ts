@@ -1,57 +1,38 @@
 /**
- * Crea (o actualiza) la cuenta del administrador del sistema.
+ * Crea (o actualiza) la cuenta del administrador del sistema en un ambiente.
  *
- *   npm run admin:create      (lee las variables de BackEnd/.env)
+ *   npm run admin:create:dev    (lee BackEnd/.env.development)
+ *   npm run admin:create:prod   (lee BackEnd/.env.production, pide confirmación)
  *
  * - Si el usuario no existe: lo crea con el email ya confirmado.
  * - Si existe: le actualiza la contraseña y lo desbloquea.
  * - En ambos casos lo marca como admin del sistema. Se puede correr varias veces.
  */
-import { createClient } from '@supabase/supabase-js';
-
-function env(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) {
-    console.error(`✗ Falta ${name} en BackEnd/.env (ver .env.example)`);
-    process.exit(1);
-  }
-  return value;
-}
-
-const url = env('SUPABASE_URL');
-const secretKey = env('SUPABASE_SECRET_KEY');
-const email = env('SYSTEM_ADMIN_EMAIL').toLowerCase();
-const password = env('SYSTEM_ADMIN_PASSWORD');
-
-if (secretKey.startsWith('sb_publishable_')) {
-  console.error('✗ SUPABASE_SECRET_KEY tiene la publishable key. Usá la secret key (sb_secret_...).');
-  process.exit(1);
-}
-
-const supabase = createClient(url, secretKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-
-async function findUserIdByEmail(target: string): Promise<string | null> {
-  for (let page = 1; ; page++) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error) throw error;
-    const found = data.users.find((u) => u.email?.toLowerCase() === target);
-    if (found) return found.id;
-    if (data.users.length < 1000) return null;
-  }
-}
+import { confirmTyped, loadEnv, parseEnvName } from './lib/env.ts';
+import { adminClient, findUserByEmail } from './lib/supabase-admin.ts';
 
 async function main() {
-  let userId = await findUserIdByEmail(email);
+  const env = loadEnv(parseEnvName(process.argv[2]));
+  const email = env.require('SYSTEM_ADMIN_EMAIL').toLowerCase();
+  const password = env.require('SYSTEM_ADMIN_PASSWORD');
 
-  if (userId) {
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
+  console.log(`\n▶ Ambiente: ${env.label} (proyecto ${env.projectRef})\n`);
+  if (env.name === 'production') {
+    await confirmTyped('PRODUCCION', `⚠️  Vas a crear/actualizar el admin ${email} en PRODUCCIÓN.`);
+  }
+
+  const supabase = adminClient(env);
+  const existing = await findUserByEmail(supabase, email);
+  let userId: string;
+
+  if (existing) {
+    const { error } = await supabase.auth.admin.updateUserById(existing.id, {
       password,
       email_confirm: true,
       ban_duration: 'none',
     });
     if (error) throw error;
+    userId = existing.id;
     console.log(`• El usuario ${email} ya existía: contraseña actualizada.`);
   } else {
     const { data, error } = await supabase.auth.admin.createUser({
@@ -69,12 +50,12 @@ async function main() {
   const { error } = await supabase.from('system_admins').upsert({ user_id: userId }, { onConflict: 'user_id' });
   if (error) {
     if (error.code === 'PGRST205' || error.code === '42P01') {
-      throw new Error('No existe la tabla system_admins: aplicá las migraciones primero (npm run db:push).');
+      throw new Error('No existe la tabla system_admins: aplicá las migraciones primero (npm run db:push:<ambiente>).');
     }
     throw error;
   }
 
-  console.log(`✓ ${email} es administrador del sistema.`);
+  console.log(`✓ ${email} es administrador del sistema en ${env.label}.`);
 }
 
 main().catch((e: unknown) => {

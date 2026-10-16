@@ -6,10 +6,15 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:link": "supabase link",
-    "db:push": "supabase db push",
     "db:new": "supabase migration new",
-    "admin:create": "node --env-file-if-exists=.env scripts/create-system-admin.ts"
+    "db:status:dev": "node scripts/db.ts dev status",
+    "db:status:prod": "node scripts/db.ts prod status",
+    "db:push:dev": "node scripts/db.ts dev push",
+    "db:push:prod": "node scripts/db.ts prod push",
+    "admin:create:dev": "node scripts/create-system-admin.ts dev",
+    "admin:create:prod": "node scripts/create-system-admin.ts prod",
+    "seed:dev": "node scripts/seed-dev.ts",
+    "seed:reset": "node scripts/seed-reset.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
