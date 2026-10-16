@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MatchCard } from "@/components/match/match-card";
+import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { getMyProfile } from "@/lib/auth";
 import { isPast, matchPhase } from "@/lib/dates";
@@ -17,7 +18,8 @@ function roleLabel(m: MyMatch) {
   return parts.join(" · ");
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const { baja } = await searchParams;
   const profile = await getMyProfile();
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("my_matches");
@@ -42,6 +44,8 @@ export default async function Home() {
           + Crear
         </Link>
       </header>
+
+      {baja && <Alert kind="success">Te bajaste del partido.</Alert>}
 
       {error && (
         <p role="alert" className="text-sm text-red-600">

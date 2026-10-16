@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { joinMatch } from "@/app/actions/enrollment";
+import { ConfirmAction } from "@/components/ui/confirm-action";
 import { MatchSummary } from "@/components/match/match-summary";
 import { Roster } from "@/components/match/roster";
 import { Alert } from "@/components/ui/alert";
@@ -29,10 +31,13 @@ export default async function InvitePage({ params }: PageProps<"/p/[code]">) {
               ? "La lista de titulares está completa: si te anotás, entrás como suplente."
               : "Todavía hay lugar entre los titulares."}
           </p>
-          {/* La inscripción se habilita en la Etapa 3. */}
-          <button type="button" disabled className="h-12 rounded-xl bg-green-700 font-semibold text-white opacity-50">
-            Anotarme (próximamente)
-          </button>
+          <ConfirmAction
+            action={joinMatch}
+            fields={{ invite_code: code }}
+            label={full ? "Anotarme como suplente" : "Anotarme"}
+            pendingText="Anotándote…"
+            variant="primary"
+          />
         </div>
       ) : (
         <Alert kind="info">
