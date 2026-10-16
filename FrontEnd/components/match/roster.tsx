@@ -26,6 +26,16 @@ function PlayerRow({ p, label, remove }: { p: RosterEntry; label: string; remove
           </a>
         )}
       </div>
+      {p.team && (
+        <span
+          title={`Equipo ${p.team}`}
+          className={`flex size-6 items-center justify-center rounded-md text-xs font-bold text-white ${
+            p.team === "A" ? "bg-sky-600" : "bg-orange-500"
+          }`}
+        >
+          {p.team}
+        </span>
+      )}
       {p.is_admin && (
         <span className="rounded-full bg-green-700/10 px-2 py-0.5 text-xs font-semibold text-green-800 dark:text-green-300">
           Admin

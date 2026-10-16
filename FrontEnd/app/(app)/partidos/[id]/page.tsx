@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { cancelMatch } from "@/app/actions/admin-tools";
 import { leaveMatch } from "@/app/actions/enrollment";
 import { MatchSummary } from "@/components/match/match-summary";
 import { Roster } from "@/components/match/roster";
+import { TeamsView } from "@/components/match/teams-view";
 import { ShareButton } from "@/components/share-button";
 import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { ConfirmAction } from "@/components/ui/confirm-action";
-import { matchPhase } from "@/lib/dates";
+import { formatDateTime, matchPhase } from "@/lib/dates";
 import { getMatchView, shareText } from "@/lib/matches";
 import type { MatchView } from "@/lib/types";
 
@@ -21,9 +23,7 @@ function MyStatus({ view, canLeave }: { view: MatchView; canLeave: boolean }) {
   return (
     <section
       className={`flex flex-col gap-3 rounded-2xl border p-4 ${
-        viewer.is_starter
-          ? "border-green-700/30 bg-green-700/5"
-          : "border-amber-500/40 bg-amber-500/10"
+        viewer.is_starter ? "border-green-700/30 bg-green-700/5" : "border-amber-500/40 bg-amber-500/10"
       }`}
     >
       <div>
@@ -41,9 +41,12 @@ function MyStatus({ view, canLeave }: { view: MatchView; canLeave: boolean }) {
       </div>
       {canLeave &&
         (viewer.is_admin ? (
-          <p className="text-xs opacity-70">
-            Sos el admin: para bajarte primero vas a tener que elegir a otro titular como admin (próxima etapa).
-          </p>
+          <Link
+            href={`/partidos/${match.id}/transferir`}
+            className={buttonClass("secondary", "w-full text-red-600 dark:text-red-400")}
+          >
+            Bajarme (pasando el admin)
+          </Link>
         ) : (
           <ConfirmAction
             action={leaveMatch}
@@ -63,15 +66,51 @@ function MyStatus({ view, canLeave }: { view: MatchView; canLeave: boolean }) {
   );
 }
 
+/** Cancelar: habilitado o deshabilitado según la regla de la base, con el motivo. */
+function CancelSection({ view }: { view: MatchView }) {
+  const { viewer, match } = view;
+  const isModeration = viewer.is_system_admin && !viewer.is_admin;
+  if (!viewer.is_admin && !isModeration) return null;
+  if (match.status === "cancelled") return null;
+
+  return (
+    <div className="flex flex-col gap-1">
+      {viewer.can_cancel ? (
+        <ConfirmAction
+          action={cancelMatch}
+          fields={{ match_id: match.id }}
+          confirm={
+            isModeration
+              ? "¿Cancelar este partido como administrador del sistema? Queda registrado."
+              : "¿Cancelar el partido? Todos los anotados lo van a ver como cancelado. No se puede deshacer."
+          }
+          label={isModeration ? "🛡️ Cancelar (moderación)" : "Cancelar partido"}
+          pendingText="Cancelando…"
+          variant="danger"
+        />
+      ) : (
+        <>
+          <button type="button" disabled className={buttonClass("danger", "w-full")}>
+            Cancelar partido
+          </button>
+          {viewer.cancel_block_reason && <p className="text-xs opacity-70">{viewer.cancel_block_reason}</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default async function MatchPage({ params, searchParams }: PageProps<"/partidos/[id]">) {
   const { id } = await params;
-  const { creado, anotado } = await searchParams;
+  const { creado, anotado, equipos } = await searchParams;
   const view = await getMatchView({ id });
   const { match, viewer } = view;
   const phase = matchPhase(match);
   const isUpcoming = phase === "upcoming";
+  const isCancelled = phase === "cancelled";
   // Sacar jugadores: admin del partido o admin del sistema, antes del inicio.
   const canRemove = isUpcoming && (viewer.is_admin || viewer.is_system_admin);
+  const canEditTeams = viewer.is_admin && !isCancelled && !match.result_loaded_at;
 
   return (
     <>
@@ -82,9 +121,13 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
       {viewer.is_system_admin && !viewer.is_participant && (
         <Alert kind="info">🛡️ Estás viendo este partido como administrador del sistema.</Alert>
       )}
-      {creado && isUpcoming && (
-        <Alert kind="success">¡Partido creado! Compartí el link para que se anoten.</Alert>
+      {isCancelled && (
+        <Alert kind="error">
+          <strong>Partido cancelado</strong>
+          {match.cancelled_at && ` el ${formatDateTime(match.cancelled_at)}`}.
+        </Alert>
       )}
+      {creado && isUpcoming && <Alert kind="success">¡Partido creado! Compartí el link para que se anoten.</Alert>}
       {anotado && viewer.position !== null && (
         <Alert kind="success">
           {viewer.is_starter
@@ -92,6 +135,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
             : "¡Listo! Quedaste en la lista de suplentes: si alguien se baja, entrás."}
         </Alert>
       )}
+      {equipos && <Alert kind="success">Equipos guardados.</Alert>}
 
       <MatchSummary match={match} />
 
@@ -104,16 +148,23 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
         </section>
       )}
 
+      <TeamsView roster={view.roster} />
+
       <Roster
         roster={view.roster}
         startersCount={match.starters_count}
         removeFromMatchId={canRemove ? match.id : null}
       />
 
-      {(viewer.is_admin || viewer.can_duplicate) && (
+      {(viewer.is_admin || viewer.can_duplicate || viewer.is_system_admin) && (
         <section className="flex flex-col gap-2 border-t border-black/10 pt-4 dark:border-white/10">
           <h2 className="text-sm font-semibold opacity-70">Opciones de admin</h2>
           <div className="grid grid-cols-2 gap-2">
+            {canEditTeams && (
+              <Link href={`/partidos/${match.id}/equipos`} className={buttonClass("secondary")}>
+                👕 Equipos
+              </Link>
+            )}
             {viewer.is_admin && isUpcoming && (
               <Link href={`/partidos/${match.id}/editar`} className={buttonClass("secondary")}>
                 ✏️ Editar
@@ -125,6 +176,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
               </Link>
             )}
           </div>
+          <CancelSection view={view} />
         </section>
       )}
     </>

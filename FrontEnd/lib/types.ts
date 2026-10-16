@@ -41,6 +41,10 @@ export type MatchView = {
     position: number | null;
     is_starter: boolean;
     can_duplicate: boolean;
+    /** La base decide si se puede cancelar (regla de la lista completa). */
+    can_cancel: boolean;
+    /** Por qué no se puede cancelar (solo para el admin o el admin del sistema). */
+    cancel_block_reason: string | null;
   };
 };
 
