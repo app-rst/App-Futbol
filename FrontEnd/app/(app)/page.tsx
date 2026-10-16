@@ -73,6 +73,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           ))}
         </ul>
       )}
+
+      <Link href="/historial" className="text-center text-sm underline underline-offset-4 opacity-70">
+        📜 Ver partidos jugados
+      </Link>
     </>
   );
 }
