@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fail, type Env } from './env.ts';
+import { confirmTyped, fail, type Env } from './env.ts';
 
 /** Prefijo del lugar de los partidos de prueba (así se reconocen y se borran). */
 export const SEED_LOCATION_PREFIX = '[Prueba] ';
@@ -30,16 +30,23 @@ export const SEED_PLAYERS = [
 ] as const;
 
 /**
- * Los datos de prueba solo van a desarrollo. Además de exigir APP_ENV, se
- * niega a correr si el proyecto coincide con el de .env.production.
+ * ¿Se pueden crear/borrar datos de prueba en este ambiente?
+ * - Desarrollo: sí, sin preguntar (pero se niega si el proyecto es el mismo
+ *   que el de .env.production, por si se copió mal un archivo).
+ * - Producción (cuando la app usa un único proyecto): solo escribiendo
+ *   PRUEBAS. Los partidos de prueba solo los ven sus participantes, así que
+ *   tus amigos no los ven; los usuarios de prueba sí figuran en el panel admin.
  */
-export function assertDevelopment(env: Env): void {
-  if (env.name !== 'development') fail('Los datos de prueba solo se crean en DESARROLLO.');
-  const prodFile = join(import.meta.dirname, '..', '..', '.env.production');
-  if (existsSync(prodFile)) {
-    const prodRef = /^SUPABASE_PROJECT_REF=(.+)$/m.exec(readFileSync(prodFile, 'utf8'))?.[1]?.trim();
-    if (prodRef && prodRef === env.projectRef) {
-      fail('El proyecto de desarrollo es el mismo que el de producción. No toco nada.');
+export async function assertSeedAllowed(env: Env, action: string): Promise<void> {
+  if (env.name === 'development') {
+    const prodFile = join(import.meta.dirname, '..', '..', '.env.production');
+    if (existsSync(prodFile)) {
+      const prodRef = /^SUPABASE_PROJECT_REF=(.+)$/m.exec(readFileSync(prodFile, 'utf8'))?.[1]?.trim();
+      if (prodRef && prodRef === env.projectRef) {
+        fail('El proyecto de desarrollo es el mismo que el de producción. No toco nada.');
+      }
     }
+    return;
   }
+  await confirmTyped('PRUEBAS', `⚠️  Vas a ${action} en PRODUCCIÓN (la base que usan tus amigos).`);
 }

@@ -1,6 +1,9 @@
 const LABELS: Record<string, string> = {
+  // Hoy la app usa un único proyecto de Supabase: local y previews apuntan a la base real.
+  local: "💻 LOCAL · conectado a la base real",
+  preview: "🔍 PREVIEW · conectado a la base real",
+  // Para cuando exista un proyecto de Supabase de desarrollo aparte.
   development: "🧪 DESARROLLO · base de pruebas",
-  preview: "🧪 PREVIEW · base de pruebas",
 };
 
 /** Franja visible fuera de producción para no confundir nunca en qué ambiente estás. */

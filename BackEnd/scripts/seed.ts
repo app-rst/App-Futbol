@@ -1,8 +1,12 @@
 /**
- * Datos de prueba para DESARROLLO (nunca corre en producción).
+ * Datos de prueba: 15 usuarios ficticios y 3 partidos "[Prueba] …".
  *
- *   npm run seed:dev     crea usuarios y partidos de prueba
+ *   npm run seed         crea usuarios y partidos de prueba
  *   npm run seed:reset   los borra (tus datos reales no se tocan)
+ *
+ * Usa el único BackEnd/.env.* configurado (o el ambiente que se pase:
+ * `npm run seed -- dev`). En producción pide escribir PRUEBAS: los partidos
+ * de prueba solo los ven sus participantes, así que tus amigos no los ven.
  *
  * Los partidos se arman iniciando sesión como los usuarios de prueba y
  * llamando a las mismas RPC que usa la app (create_match, join_match_by_code),
@@ -11,13 +15,14 @@
  */
 import { randomBytes } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { assertDevelopment, SEED_LOCATION_PREFIX, SEED_PLAYERS, seedEmail } from './lib/seed-data.ts';
-import { fail, loadEnv } from './lib/env.ts';
+import { assertSeedAllowed, SEED_LOCATION_PREFIX, SEED_PLAYERS, seedEmail } from './lib/seed-data.ts';
+import { fail, loadEnv, resolveEnvName } from './lib/env.ts';
 import { adminClient, findUserByEmail, listAllUsers } from './lib/supabase-admin.ts';
 
 const HOUR = 3600_000;
-const env = loadEnv('development');
-assertDevelopment(env);
+const env = loadEnv(resolveEnvName(process.argv[2]));
+console.log(`\n▶ Ambiente: ${env.label} (proyecto ${env.projectRef})\n`);
+await assertSeedAllowed(env, 'crear usuarios y partidos de prueba');
 
 const admin = adminClient(env);
 const publishableKey = env.require('SUPABASE_PUBLISHABLE_KEY');
@@ -102,8 +107,6 @@ async function addOwner(ownerId: string | null, matchId: string) {
 }
 
 async function main() {
-  console.log(`\n▶ Ambiente: ${env.label} (proyecto ${env.projectRef})\n`);
-
   await ensureSeedUsers();
 
   const { count, error } = await admin
@@ -112,7 +115,7 @@ async function main() {
     .like('location', `${SEED_LOCATION_PREFIX}%`);
   if (error) fail(`No pude leer los partidos: ${error.message}. ¿Aplicaste las migraciones?`);
   if ((count ?? 0) > 0) {
-    console.log(`• Ya hay ${count} partidos de prueba: no creo más. Para regenerarlos: npm run seed:reset y después npm run seed:dev.`);
+    console.log(`• Ya hay ${count} partidos de prueba: no creo más. Para regenerarlos: npm run seed:reset y después npm run seed.`);
     return;
   }
 
@@ -187,7 +190,7 @@ async function main() {
   const pastSubs = (ownerId ? 12 : 11) - 10;
   console.log(`• Partido "Terminado hace 2 horas": 10 titulares con equipos A/B + ${pastSubs} suplente${pastSubs === 1 ? '' : 's'}.`);
 
-  console.log(`\n✓ Listo. Usuarios de prueba: jugador01…15@dev.fulbito.test (contraseña: SEED_PASSWORD en BackEnd/.env.development).`);
+  console.log(`\n✓ Listo. Usuarios de prueba: jugador01…15@dev.fulbito.test (contraseña: SEED_PASSWORD en BackEnd/.env.${env.name}).`);
 }
 
 main().catch((e: unknown) => {

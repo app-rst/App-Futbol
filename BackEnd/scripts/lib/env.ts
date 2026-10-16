@@ -48,6 +48,18 @@ export function parseEnvName(arg: string | undefined): EnvName {
   return name;
 }
 
+/**
+ * Ambiente pedido por argumento o, si no se pasa, el único .env.<ambiente>
+ * que exista (hoy la app usa un solo proyecto de Supabase).
+ */
+export function resolveEnvName(arg: string | undefined): EnvName {
+  if (arg) return parseEnvName(arg);
+  const present = (['development', 'production'] as const).filter((n) => existsSync(join(ROOT, `.env.${n}`)));
+  if (present.length === 1) return present[0];
+  if (present.length === 0) fail('No hay ningún BackEnd/.env.development ni .env.production (ver .env.example).');
+  fail('Hay más de un ambiente configurado: indicá dev o prod (por ejemplo: npm run seed -- dev).');
+}
+
 export function loadEnv(name: EnvName): Env {
   const file = join(ROOT, `.env.${name}`);
   if (!existsSync(file)) {

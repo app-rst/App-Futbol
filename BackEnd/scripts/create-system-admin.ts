@@ -1,7 +1,7 @@
 /**
  * Crea (o actualiza) la cuenta del administrador del sistema en un ambiente.
  *
- *   npm run admin:create:dev    (lee BackEnd/.env.development)
+ *   npm run admin:create:dev    (lee BackEnd/.env.development, si existe)
  *   npm run admin:create:prod   (lee BackEnd/.env.production, pide confirmación)
  *
  * - Si el usuario no existe: lo crea con el email ya confirmado.

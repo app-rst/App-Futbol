@@ -1,21 +1,23 @@
 /**
- * Borra los datos de prueba de DESARROLLO: los partidos "[Prueba] …", los
- * partidos que organizan los usuarios de prueba y esos usuarios. Por la
- * cascada se van sus inscripciones. Tus datos reales no se tocan.
+ * Borra los datos de prueba: los partidos "[Prueba] …", los partidos que
+ * organizan los usuarios de prueba y esos usuarios. Por la cascada se van sus
+ * inscripciones. Tus datos reales no se tocan.
  *
- *   npm run seed:reset
+ *   npm run seed:reset          (usa el único .env.* configurado)
+ *   npm run seed:reset -- dev   (o prod, si hay más de uno)
+ *
+ * En producción pide escribir PRUEBAS para confirmar.
  */
-import { assertDevelopment, SEED_EMAIL_DOMAIN, SEED_LOCATION_PREFIX } from './lib/seed-data.ts';
-import { loadEnv } from './lib/env.ts';
+import { assertSeedAllowed, SEED_EMAIL_DOMAIN, SEED_LOCATION_PREFIX } from './lib/seed-data.ts';
+import { loadEnv, resolveEnvName } from './lib/env.ts';
 import { adminClient, listAllUsers } from './lib/supabase-admin.ts';
 
-const env = loadEnv('development');
-assertDevelopment(env);
+const env = loadEnv(resolveEnvName(process.argv[2]));
+console.log(`\n▶ Ambiente: ${env.label} (proyecto ${env.projectRef})\n`);
+await assertSeedAllowed(env, 'borrar los usuarios y partidos de prueba');
 const admin = adminClient(env);
 
 async function main() {
-  console.log(`\n▶ Ambiente: ${env.label} (proyecto ${env.projectRef})\n`);
-
   // Solo usuarios marcados como de prueba Y con el dominio de prueba.
   const seedUsers = (await listAllUsers(admin)).filter(
     (u) => u.user_metadata?.seed === true && u.email?.endsWith(`@${SEED_EMAIL_DOMAIN}`),

@@ -27,7 +27,8 @@ Web app mobile-first (instalable como PWA) para organizar partidos:
 7. [Variables de entorno](#variables-de-entorno)
 8. [Deploy en Vercel](#deploy-en-vercel)
 9. [Tests y datos de prueba](#tests-y-datos-de-prueba)
-10. [Reglas de negocio y seguridad](#reglas-de-negocio-y-seguridad)
+10. [Costos y límites del plan gratuito](#costos-y-límites-del-plan-gratuito)
+11. [Reglas de negocio y seguridad](#reglas-de-negocio-y-seguridad)
 
 ---
 
@@ -48,7 +49,7 @@ App-Futbol/
 │  └─ start.bat              Menú de tareas del BackEnd (Windows)
 └─ Docs/
    ├─ Prompt.txt             Especificación original
-   └─ AMBIENTES.md           Desarrollo vs. producción y cómo publicar
+   └─ AMBIENTES.md           Cómo se trabaja con un solo proyecto y cómo publicar
 ```
 
 Toda la lógica de negocio vive en **funciones de Postgres** (RPC `security definer`). La app nunca escribe directo en las tablas, así que las reglas valen aunque alguien se saltee la interfaz.
@@ -57,7 +58,7 @@ Toda la lógica de negocio vive en **funciones de Postgres** (RPC `security defi
 
 - **Node.js 22 o superior** (probado con 24).
 - Una cuenta de [Supabase](https://supabase.com) (alcanza con el plan gratuito).
-- **No hace falta Docker**: la base de desarrollo está en la nube y los tests usan Postgres en memoria (PGlite).
+- **No hace falta Docker**: la base está en la nube y los tests usan Postgres en memoria (PGlite).
 - Para deployar: una cuenta de [Vercel](https://vercel.com).
 
 ## Puesta en marcha local
@@ -69,14 +70,15 @@ cd ../BackEnd && npm install
 
 # 2. Configuración (ver secciones siguientes)
 #    FrontEnd/.env.local        ← copiar de FrontEnd/.env.example
-#    BackEnd/.env.development   ← copiar de BackEnd/.env.example
+#    BackEnd/.env.production    ← copiar de BackEnd/.env.example
 
-# 3. Base de datos: migraciones y admin del sistema
+# 3. Base de datos: tests, migraciones y admin del sistema
 cd BackEnd
+npm test                           # valida las migraciones en un Postgres en memoria
 npx supabase login                 # solo la primera vez
-npm run db:push:dev                # aplica las migraciones al proyecto de desarrollo
-npm run admin:create:dev           # crea el administrador del sistema
-npm run seed:dev                   # opcional: usuarios y partidos de prueba
+npm run db:push:prod               # aplica las migraciones (pide escribir PRODUCCION)
+npm run admin:create:prod          # crea el administrador del sistema
+npm run seed                       # opcional: usuarios y partidos de prueba (pide escribir PRUEBAS)
 
 # 4. App
 cd ../FrontEnd && npm run dev      # http://localhost:3000
@@ -91,20 +93,20 @@ En Windows también podés usar `BackEnd\start.bat`, un menú con todas las tare
    - **Project URL** (`https://<ref>.supabase.co`) y el **ref** (lo que va antes de `.supabase.co`);
    - **Publishable key** (`sb_publishable_…`): va en el FrontEnd;
    - **Secret key** (`sb_secret_…`): **solo** en `BackEnd/.env.*`. Nunca en el FrontEnd ni en GitHub.
-3. Completá `BackEnd/.env.development` (o `.env.production`) a partir de `BackEnd/.env.example`.
-4. Aplicá las migraciones: `npm run db:push:dev` (o `:prod`, que pide confirmación).
-5. Creá el administrador del sistema: `npm run admin:create:dev`. Usa `SYSTEM_ADMIN_EMAIL` y `SYSTEM_ADMIN_PASSWORD` del `.env`; en producción, con una contraseña fuerte.
+3. Completá `BackEnd/.env.production` a partir de `BackEnd/.env.example`.
+4. Aplicá las migraciones: `npm run db:push:prod` (pide confirmación).
+5. Creá el administrador del sistema: `npm run admin:create:prod`. Usa `SYSTEM_ADMIN_EMAIL` y `SYSTEM_ADMIN_PASSWORD` del `.env`, con una contraseña fuerte.
 
-Hay dos proyectos de Supabase, uno para **desarrollo** y otro para **producción**. Ver [`Docs/AMBIENTES.md`](Docs/AMBIENTES.md).
+La app usa **un único proyecto de Supabase** (el plan gratuito permite 2 activos). Cómo se prueba sin un ambiente aparte, y cómo separarlos si algún día hace falta: [`Docs/AMBIENTES.md`](Docs/AMBIENTES.md).
 
 ## Configurar Auth
 
 ### URLs (Authentication → URL Configuration)
 
-| Ambiente | Site URL | Redirect URLs |
-|---|---|---|
-| Desarrollo | `http://localhost:3000` | `http://localhost:3000/**` y `https://*-app-rst.vercel.app/**` (previews) |
-| Producción | `https://<tu-dominio>` | `https://<tu-dominio>/**` |
+| Campo | Valor |
+|---|---|
+| Site URL | `https://<tu-dominio>` (el de Vercel, por ejemplo `https://app-futbol.vercel.app`) |
+| Redirect URLs | `https://<tu-dominio>/**`, `https://*-app-rst.vercel.app/**` (previews) y `http://localhost:3000/**` (tu PC) |
 
 Todos los links de auth (confirmación de email, Google y recuperar contraseña) vuelven a `/auth/callback`.
 
@@ -173,21 +175,22 @@ Con un SMTP propio, los emails de confirmación y de recuperación llegan bien y
 
 ### FrontEnd (`FrontEnd/.env.local` en local; en Vercel, por ambiente)
 
-| Variable | Desarrollo (local) | Vercel Preview | Vercel Production |
+| Variable | Tu PC (`.env.local`) | Vercel Preview | Vercel Production |
 |---|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL de desarrollo | URL de desarrollo | URL de **producción** |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | key de desarrollo | key de desarrollo | key de **producción** |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto | la misma | la misma |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publishable key | la misma | la misma |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | *(vacía)* | `https://<tu-dominio>` |
-| `NEXT_PUBLIC_APP_ENV` | `development` | `preview` | `production` |
+| `NEXT_PUBLIC_APP_ENV` | `local` | `preview` | `production` |
+| `CRON_SECRET` | *(no hace falta)* | *(no hace falta)* | texto largo aleatorio ([despertador](#costos-y-límites-del-plan-gratuito)) |
 
 Las variables `NEXT_PUBLIC_*` son públicas por diseño. La protección de los datos la da la RLS de Postgres, no ocultar la key.
 
-### BackEnd (`BackEnd/.env.development` y `BackEnd/.env.production`)
+### BackEnd (`BackEnd/.env.production`)
 
 Ver [`BackEnd/.env.example`](BackEnd/.env.example):
 - `APP_ENV`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL` y `SUPABASE_SECRET_KEY`;
 - `SYSTEM_ADMIN_EMAIL` y `SYSTEM_ADMIN_PASSWORD`;
-- solo en desarrollo, para los datos de prueba: `SUPABASE_PUBLISHABLE_KEY`, `SEED_PASSWORD` y `SEED_OWNER_EMAIL`.
+- para los datos de prueba: `SUPABASE_PUBLISHABLE_KEY`, `SEED_PASSWORD` y `SEED_OWNER_EMAIL`.
 
 `.gitignore` excluye todos los `.env*`, salvo los `.env.example`.
 
@@ -199,12 +202,13 @@ Ver [`BackEnd/.env.example`](BackEnd/.env.example):
 4. **Deploy**.
 5. Una vez deployado:
    - en **Settings → Git**, verificá que *Production Branch* sea `main`;
-   - en Supabase de producción, poné el dominio de Vercel en *Site URL* y *Redirect URLs*;
-   - en Google Cloud, agregá el dominio a *Authorized JavaScript origins*.
+   - en Supabase, poné el dominio de Vercel en *Site URL* y *Redirect URLs*;
+   - en Google Cloud, agregá el dominio a *Authorized JavaScript origins*;
+   - en **Settings → Cron Jobs**, verificá que figure `/api/keepalive` (lo define `FrontEnd/vercel.json`).
 
 **Flujo de trabajo:**
-- se trabaja en `develop`: cada push genera una *preview* contra la base de desarrollo;
-- para publicar, primero `npm run db:push:prod` si hay migraciones nuevas, y después el merge de `develop` a `main`.
+- se trabaja en `develop`: cada push genera una *preview* (contra la misma base, con la franja "PREVIEW");
+- para publicar, primero los tests y `npm run db:push:prod` si hay migraciones nuevas, y después el merge de `develop` a `main`.
 
 Detalle completo en [`Docs/AMBIENTES.md`](Docs/AMBIENTES.md).
 
@@ -217,9 +221,27 @@ cd FrontEnd && npm run lint && npm run build
 ```
 
 - Los tests del BackEnd aplican **las mismas migraciones** a un Postgres en memoria y simulan usuarios reales (roles `authenticated` y `anon`, RLS y JWT).
-- **Datos de prueba** (solo en desarrollo):
-  - `npm run seed:dev` crea 15 jugadores ficticios y 3 partidos: lleno con suplentes, con lugares libres y terminado (para resultado y MVP);
-  - `npm run seed:reset` los borra.
+- **Datos de prueba:**
+  - `npm run seed` crea 15 jugadores ficticios y 3 partidos "[Prueba]": lleno con suplentes, con lugares libres y terminado (para resultado y MVP). En producción pide escribir `PRUEBAS`, y esos partidos solo los ven sus participantes;
+  - `npm run seed:reset` los borra sin tocar datos reales.
+
+## Costos y límites del plan gratuito
+
+La app entra holgada en el **plan gratuito de Supabase**:
+
+| Recurso | Plan gratuito | Uso estimado (50 jugadores, 2 partidos por semana, 1 año) |
+|---|---|---|
+| Base de datos | 500 MB | ~5 MB |
+| Usuarios activos por mes | 50.000 | ~50 |
+| Tráfico | 5 GB por mes | muy poco |
+| Proyectos activos | 2 | 1 (esta app) |
+
+- **Pausa por inactividad:** los proyectos gratuitos se pausan tras **1 semana sin uso**.
+  - Para evitarlo hay un **despertador**: un Cron de Vercel llama una vez por día a `/api/keepalive`, protegido con `CRON_SECRET`, que hace una consulta mínima (`ping()`).
+  - Si igual se pausara, se reactiva desde el dashboard sin perder datos.
+- **Si algún día no alcanza:**
+  - **Supabase Pro** cuesta USD 25 por mes por proyecto (8 GB de base, 100.000 usuarios activos, backups diarios);
+  - alternativa más barata: **Supabase self-hosted** (open source) en un VPS de ~USD 5–10 por mes. La app no cambia: se aplican las mismas migraciones (`supabase db push --db-url …`) y se actualizan la URL y las keys. A cambio, el mantenimiento del servidor (backups, actualizaciones, Docker en el servidor) queda a tu cargo.
 
 ## Reglas de negocio y seguridad
 

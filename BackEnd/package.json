@@ -13,8 +13,8 @@
     "db:push:prod": "node scripts/db.ts prod push",
     "admin:create:dev": "node scripts/create-system-admin.ts dev",
     "admin:create:prod": "node scripts/create-system-admin.ts prod",
-    "seed:dev": "node scripts/seed-dev.ts",
-    "seed:reset": "node scripts/seed-reset.ts"
+    "seed:reset": "node scripts/seed-reset.ts",
+    "seed": "node scripts/seed.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
