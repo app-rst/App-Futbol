@@ -9,7 +9,8 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { ConfirmAction } from "@/components/ui/confirm-action";
 import { formatDateTime, matchPhase } from "@/lib/dates";
-import { getMatchView, shareText } from "@/lib/matches";
+import { getMatchPost, getMatchView, shareText } from "@/lib/matches";
+import { MvpSection, ResultCard } from "@/components/match/post-match";
 import type { MatchView } from "@/lib/types";
 
 export const metadata = { title: "Partido" };
@@ -102,10 +103,13 @@ function CancelSection({ view }: { view: MatchView }) {
 
 export default async function MatchPage({ params, searchParams }: PageProps<"/partidos/[id]">) {
   const { id } = await params;
-  const { creado, anotado, equipos } = await searchParams;
+  const { creado, anotado, equipos, resultado, votado } = await searchParams;
   const view = await getMatchView({ id });
   const { match, viewer } = view;
   const phase = matchPhase(match);
+  const isFinished = phase === "voting" || phase === "closed";
+  // Resultado y MVP: desde que empieza (aviso de votación) hasta siempre.
+  const post = phase === "playing" || isFinished ? await getMatchPost(id) : null;
   const isUpcoming = phase === "upcoming";
   const isCancelled = phase === "cancelled";
   // Sacar jugadores: admin del partido o admin del sistema, antes del inicio.
@@ -136,8 +140,13 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
         </Alert>
       )}
       {equipos && <Alert kind="success">Equipos guardados.</Alert>}
+      {resultado && <Alert kind="success">Resultado guardado.</Alert>}
+      {votado && <Alert kind="success">¡Voto registrado! Es anónimo: nadie puede ver a quién votaste.</Alert>}
 
       <MatchSummary match={match} />
+
+      {post && isFinished && <ResultCard post={post} matchId={match.id} isAdmin={viewer.is_admin} />}
+      {post && <MvpSection post={post} matchId={match.id} />}
 
       <MyStatus view={view} canLeave={isUpcoming} />
 

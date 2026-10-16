@@ -48,6 +48,24 @@ export type MatchView = {
   };
 };
 
+/** Lo de después del partido (get_match_post). Nunca trae conteos de votos. */
+export type MatchPost = {
+  result: { loaded: boolean; team_a_goals: number | null; team_b_goals: number | null };
+  scorers: Array<{ user_id: string; display_name: string; team: "A" | "B" | null; goals: number }>;
+  voting: {
+    opens_at: string;
+    closes_at: string;
+    is_open: boolean;
+    is_closed: boolean;
+    is_starter: boolean;
+    has_voted: boolean;
+    can_vote: boolean;
+    candidates: Array<{ user_id: string; display_name: string; team: "A" | "B" | null }>;
+  };
+  /** null mientras la votación no cerró; [] si nadie votó; varios si hay empate. */
+  mvp: Array<{ user_id: string; display_name: string }> | null;
+};
+
 export type MyMatch = {
   id: string;
   location: string;
