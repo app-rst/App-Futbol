@@ -44,10 +44,13 @@ export function ResultForm({
   matchId,
   players,
   initial,
+  locked,
 }: {
   matchId: string;
   players: Player[];
   initial: { a: number; b: number; scorers: Record<string, number> };
+  /** Resultado ya guardado: el marcador queda fijo y solo se editan los goleadores. */
+  locked: boolean;
 }) {
   const [state, action] = useActionState(saveResult, {});
   const [score, setScore] = useState({ A: initial.a, B: initial.b });
@@ -63,7 +66,14 @@ export function ResultForm({
   );
 
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <form
+      action={action}
+      className="flex flex-col gap-5"
+      onSubmit={(e) => {
+        const msg = `¿Guardar el resultado ${score.A}–${score.B}? Después no se puede cambiar el marcador, solo los goleadores.`;
+        if (!locked && !window.confirm(msg)) e.preventDefault();
+      }}
+    >
       <input type="hidden" name="match_id" value={matchId} />
       <input type="hidden" name="team_a_goals" value={score.A} />
       <input type="hidden" name="team_b_goals" value={score.B} />
@@ -74,10 +84,15 @@ export function ResultForm({
         {(["A", "B"] as const).map((t) => (
           <div key={t} className={`flex flex-col items-center gap-2 rounded-2xl border p-3 ${TEAM[t].box}`}>
             <p className={`font-bold ${TEAM[t].title}`}>Equipo {t}</p>
-            <Stepper big label={`equipo ${t}`} value={score[t]} onChange={(n) => setScore((s) => ({ ...s, [t]: n }))} />
+            {locked ? (
+              <span className="text-4xl font-bold tabular-nums">{score[t]}</span>
+            ) : (
+              <Stepper big label={`equipo ${t}`} value={score[t]} onChange={(n) => setScore((s) => ({ ...s, [t]: n }))} />
+            )}
           </div>
         ))}
       </section>
+      {locked && <p className="-mt-3 text-xs opacity-70">🔒 El resultado ya está guardado y no se puede cambiar.</p>}
 
       {(["A", "B"] as const).map((t) => (
         <section key={t} className="flex flex-col gap-2">
@@ -118,7 +133,7 @@ export function ResultForm({
       )}
 
       <SubmitButton disabled={over.length > 0} pendingText="Guardando…">
-        Guardar resultado
+        {locked ? "Guardar goleadores" : "Guardar resultado"}
       </SubmitButton>
     </form>
   );

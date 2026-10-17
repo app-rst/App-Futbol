@@ -47,7 +47,7 @@ export function ResultCard({ post, matchId, isAdmin }: { post: MatchPost; matchI
       )}
       {isAdmin && (
         <Link href={`/partidos/${matchId}/resultado`} className={buttonClass(result.loaded ? "secondary" : "primary")}>
-          {result.loaded ? "✏️ Editar resultado" : "Cargar resultado"}
+          {result.loaded ? "✏️ Editar goleadores" : "Cargar resultado"}
         </Link>
       )}
     </section>

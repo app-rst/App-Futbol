@@ -117,15 +117,22 @@ describe('después del partido: resultado y MVP', () => {
       expect((await post(admin)).result.team_a_goals).toBe(4);
     });
 
+    it('una vez guardado, el marcador no se puede cambiar', async () => {
+      await finishedRecently();
+      await saveResult(admin, 2, 0, [{ user_id: teamA()[0], goals: 2 }]);
+      await expect(saveResult(admin, 1, 1)).rejects.toThrow(/ya está guardado/);
+      expect((await post(admin)).result).toEqual({ loaded: true, team_a_goals: 2, team_b_goals: 0 });
+    });
+
     it('editar reemplaza los goleadores, y después ya no se pueden cambiar los equipos', async () => {
       await finishedRecently();
       await saveResult(admin, 2, 0, [{ user_id: teamA()[0], goals: 2 }]);
-      await saveResult(admin, 1, 1, [
+      await saveResult(admin, 2, 0, [
         { user_id: teamA()[1], goals: 1 },
-        { user_id: teamB()[1], goals: 1 },
+        { user_id: teamA()[2], goals: 1 },
       ]);
       const p = await post(admin);
-      expect(p.scorers.map((s) => s.user_id).sort()).toEqual([teamA()[1], teamB()[1]].sort());
+      expect(p.scorers.map((s) => s.user_id).sort()).toEqual([teamA()[1], teamA()[2]].sort());
       await expect(
         rpc(db, admin, 'set_teams', {
           p_match_id: matchId,

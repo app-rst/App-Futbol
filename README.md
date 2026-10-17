@@ -4,7 +4,7 @@ Web app mobile-first (instalable como PWA) para organizar partidos:
 
 - crear un partido y compartirlo por WhatsApp;
 - anotarse como titular o suplente, con promoción automática;
-- armar equipos y cargar el resultado y los goleadores;
+- armar equipos y cargar el resultado y los goleadores (una vez guardado, el marcador queda fijo; los goleadores se pueden corregir);
 - votar el **Premio Lio Messi** (MVP) de forma anónima;
 - ver el historial de partidos jugados.
 
