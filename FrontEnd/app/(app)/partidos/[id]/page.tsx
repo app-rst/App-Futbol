@@ -175,7 +175,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
         removeFromMatchId={canRemove ? match.id : null}
       />
 
-      {(viewer.is_admin || viewer.can_duplicate || viewer.is_system_admin) && (
+      {(viewer.is_admin || viewer.is_system_admin) && (
         <section className="flex flex-col gap-2 border-t border-black/10 pt-4 dark:border-white/10">
           <h2 className="text-sm font-semibold opacity-70">Opciones de admin</h2>
           <div className="grid grid-cols-2 gap-2">
@@ -187,11 +187,6 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
             {viewer.is_admin && isUpcoming && (
               <Link href={`/partidos/${match.id}/editar`} className={buttonClass("secondary")}>
                 ✏️ Editar
-              </Link>
-            )}
-            {viewer.can_duplicate && (
-              <Link href={`/partidos/nuevo?duplicar=${match.id}`} className={buttonClass("secondary")}>
-                📋 Duplicar
               </Link>
             )}
           </div>

@@ -19,19 +19,26 @@ export type MatchFormValues = {
   deadline_time: string;
 };
 
+/** Último partido que organizaste en un lugar, con los datos listos para el form. */
+export type MatchTemplate = { id: string; values: MatchFormValues };
+
 /** Por defecto, el límite de inscripción es 2 horas antes del inicio. */
 const DEFAULT_DEADLINE_MINUTES = -120;
+
+const sameLocation = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 export function MatchForm({
   action,
   initial,
   hidden = {},
+  templates = [],
   submitLabel,
   pendingText,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   initial: MatchFormValues;
   hidden?: Record<string, string>;
+  templates?: MatchTemplate[];
   submitLabel: string;
   pendingText: string;
 }) {
@@ -39,7 +46,22 @@ export function MatchForm({
   const [v, setV] = useState(initial);
   // Mientras el usuario no toque el límite, se recalcula solo al cambiar fecha/hora.
   const [deadlineTouched, setDeadlineTouched] = useState(Boolean(initial.deadline_date));
+  // Partido anterior del que se copiaron los datos al escribir su mismo lugar.
+  const [copiedFrom, setCopiedFrom] = useState<string | null>(null);
   const e = state.fieldErrors ?? {};
+
+  function updateLocation(location: string) {
+    const t = templates.find((t) => sameLocation(t.values.location, location));
+    if (t && t.id !== copiedFrom) {
+      setV({ ...t.values, location });
+      setDeadlineTouched(true);
+    } else if (!t) {
+      update("location", location);
+    } else {
+      setV((prev) => ({ ...prev, location }));
+    }
+    setCopiedFrom(t?.id ?? null);
+  }
 
   function update<K extends keyof MatchFormValues>(key: K, value: string) {
     setV((prev) => {
@@ -64,6 +86,7 @@ export function MatchForm({
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
+      {copiedFrom && <input type="hidden" name="duplicated_from" value={copiedFrom} />}
       <Alert kind="error">{state.error}</Alert>
 
       <Field
@@ -72,10 +95,26 @@ export function MatchForm({
         required
         maxLength={120}
         placeholder="Ej: Complejo La Bombonera, cancha 3"
+        autoComplete="off"
+        list={templates.length > 0 ? "past-locations" : undefined}
         value={v.location}
-        onChange={(ev) => update("location", ev.target.value)}
+        onChange={(ev) => updateLocation(ev.target.value)}
         error={e.location}
+        hint={
+          copiedFrom
+            ? "Copiamos los datos de tu último partido en este lugar. Revisalos antes de guardar."
+            : templates.length > 0
+              ? "Si usás un lugar de antes, completamos el resto con los datos de ese partido."
+              : undefined
+        }
       />
+      {templates.length > 0 && (
+        <datalist id="past-locations">
+          {templates.map((t) => (
+            <option key={t.id} value={t.values.location} />
+          ))}
+        </datalist>
+      )}
 
       <Field
         label="Fecha"
