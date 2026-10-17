@@ -54,7 +54,7 @@ export function ResultCard({ post, matchId, isAdmin }: { post: MatchPost; matchI
   );
 }
 
-/** Votación del MVP: anónima, solo titulares, 24 h desde el fin. */
+/** Votación del Premio Lio Messi (MVP): anónima, solo titulares, 24 h desde el fin. */
 export function MvpSection({ post, matchId, startersCount }: { post: MatchPost; matchId: string; startersCount: number }) {
   const { voting, mvp } = post;
   // Hay MVP solo si vota al menos la mitad de los titulares (ver match_mvp_winners).
@@ -62,22 +62,22 @@ export function MvpSection({ post, matchId, startersCount }: { post: MatchPost; 
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-400/10 p-4">
-      <h2 className="font-semibold">🏆 MVP del partido</h2>
+      <h2 className="font-semibold">🏆 Premio Lio Messi</h2>
 
       {voting.is_closed ? (
         mvp && mvp.length > 0 ? (
           <div>
             <p className="text-2xl font-black">{mvp.map((m) => m.display_name).join(" y ")}</p>
-            {mvp.length > 1 && <p className="text-sm opacity-70">Empate: compartieron el MVP.</p>}
+            {mvp.length > 1 && <p className="text-sm opacity-70">Empate: comparten el Premio Lio Messi.</p>}
           </div>
         ) : (
-          <p className="text-sm opacity-80">Sin MVP: votaron menos de {minVotes} titulares.</p>
+          <p className="text-sm opacity-80">Sin Premio Lio Messi: votaron menos de {minVotes} titulares.</p>
         )
       ) : voting.is_open ? (
         <>
           <p className="text-sm opacity-80">
             La votación cierra el <strong>{formatDateTime(voting.closes_at)}</strong>. Después se muestra el ganador.
-            Para que haya MVP tienen que votar al menos {minVotes} titulares.
+            Para que se entregue el premio tienen que votar al menos {minVotes} titulares.
           </p>
           {voting.has_voted ? (
             <p className="font-semibold text-green-800 dark:text-green-300">✓ Ya votaste. ¡Gracias!</p>

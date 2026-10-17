@@ -65,9 +65,9 @@ function HistoryCard({ m }: { m: HistoryMatch }) {
       <p className="text-sm">
         🏆{" "}
         {m.mvp === null ? (
-          <span className="opacity-60">Votación del MVP abierta</span>
+          <span className="opacity-60">Votación del Premio Lio Messi abierta</span>
         ) : m.mvp.length === 0 ? (
-          <span className="opacity-60">Sin MVP (nadie votó)</span>
+          <span className="opacity-60">Sin Premio Lio Messi (votaron menos de la mitad)</span>
         ) : (
           <strong>{m.mvp.map((x) => x.display_name).join(" y ")}</strong>
         )}

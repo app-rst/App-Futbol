@@ -102,7 +102,7 @@ export type MatchPhase ="cancelled" | "upcoming" | "playing" | "voting" | "close
 
 /**
  * Estado del partido derivado del reloj:
- * próximo → en juego (inicio-fin) → votación MVP (24 h desde el fin) → cerrado.
+ * próximo → en juego (inicio-fin) → votación Premio Lio Messi (24 h desde el fin) → cerrado.
  */
 export function matchPhase(
   m: { status: string; starts_at: string; ends_at: string },
@@ -121,6 +121,6 @@ export const PHASE_LABEL: Record<MatchPhase, string> = {
   cancelled: "Cancelado",
   upcoming: "Próximo",
   playing: "En juego",
-  voting: "Votación MVP",
+  voting: "Votación Premio Messi",
   closed: "Finalizado",
 };

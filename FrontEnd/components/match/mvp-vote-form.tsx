@@ -16,14 +16,14 @@ export function MvpVoteForm({ matchId, candidates }: { matchId: string; candidat
     <form
       action={action}
       onSubmit={(e) => {
-        if (chosen && !window.confirm(`¿Votar a ${chosen.display_name} como MVP? No se puede cambiar.`)) e.preventDefault();
+        if (chosen && !window.confirm(`¿Votar a ${chosen.display_name} para el Premio Lio Messi? No se puede cambiar.`)) e.preventDefault();
       }}
       className="flex flex-col gap-3"
     >
       <input type="hidden" name="match_id" value={matchId} />
       <Alert kind="error">{state.error}</Alert>
       <fieldset className="grid grid-cols-2 gap-2">
-        <legend className="sr-only">Elegí al MVP</legend>
+        <legend className="sr-only">Elegí al ganador del Premio Lio Messi</legend>
         {candidates.map((c) => (
           <label
             key={c.user_id}
