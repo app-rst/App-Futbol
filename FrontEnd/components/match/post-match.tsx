@@ -2,10 +2,21 @@ import Link from "next/link";
 import { MvpVoteForm } from "@/components/match/mvp-vote-form";
 import { buttonClass } from "@/components/ui/button-styles";
 import { formatDateTime } from "@/lib/dates";
+import { teamLabel, type TeamNames } from "@/lib/teams";
 import type { MatchPost } from "@/lib/types";
 
 /** Marcador y goleadores. */
-export function ResultCard({ post, matchId, isAdmin }: { post: MatchPost; matchId: string; isAdmin: boolean }) {
+export function ResultCard({
+  post,
+  matchId,
+  isAdmin,
+  names,
+}: {
+  post: MatchPost;
+  matchId: string;
+  isAdmin: boolean;
+  names: TeamNames;
+}) {
   const { result, scorers } = post;
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5">
@@ -14,12 +25,12 @@ export function ResultCard({ post, matchId, isAdmin }: { post: MatchPost; matchI
         <>
           <div className="flex items-center justify-center gap-4">
             <div className="text-center">
-              <p className="text-xs font-bold text-sky-700 dark:text-sky-300">Equipo A</p>
+              <p className="text-xs font-bold text-sky-700 dark:text-sky-300">{teamLabel(names, "A")}</p>
               <p className="text-5xl font-black tabular-nums">{result.team_a_goals}</p>
             </div>
             <span className="text-3xl opacity-30">–</span>
             <div className="text-center">
-              <p className="text-xs font-bold text-orange-600 dark:text-orange-300">Equipo B</p>
+              <p className="text-xs font-bold text-orange-600 dark:text-orange-300">{teamLabel(names, "B")}</p>
               <p className="text-5xl font-black tabular-nums">{result.team_b_goals}</p>
             </div>
           </div>
@@ -55,7 +66,17 @@ export function ResultCard({ post, matchId, isAdmin }: { post: MatchPost; matchI
 }
 
 /** Votación del Premio Lio Messi (MVP): anónima, solo titulares, 24 h desde el fin. */
-export function MvpSection({ post, matchId, startersCount }: { post: MatchPost; matchId: string; startersCount: number }) {
+export function MvpSection({
+  post,
+  matchId,
+  startersCount,
+  names,
+}: {
+  post: MatchPost;
+  matchId: string;
+  startersCount: number;
+  names: TeamNames;
+}) {
   const { voting, mvp } = post;
   // Hay MVP solo si vota al menos la mitad de los titulares (ver match_mvp_winners).
   const minVotes = Math.ceil(startersCount / 2);
@@ -86,7 +107,7 @@ export function MvpSection({ post, matchId, startersCount }: { post: MatchPost; 
               <p className="text-xs opacity-70">
                 🔒 Es anónimo: nadie, ni el admin, puede ver a quién votaste. Votar es opcional.
               </p>
-              <MvpVoteForm matchId={matchId} candidates={voting.candidates} />
+              <MvpVoteForm matchId={matchId} candidates={voting.candidates} names={names} />
             </>
           ) : (
             <p className="text-sm opacity-70">

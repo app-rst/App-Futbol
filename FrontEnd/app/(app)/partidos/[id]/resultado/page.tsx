@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { isPast } from "@/lib/dates";
 import { getMatchPost, getMatchView } from "@/lib/matches";
+import { teamNamesOf } from "@/lib/teams";
 import { ResultForm } from "./result-form";
 
 export const metadata = { title: "Resultado" };
@@ -52,6 +53,7 @@ export default async function ResultPage({ params }: PageProps<"/partidos/[id]/r
             scorers: Object.fromEntries(post.scorers.map((s) => [s.user_id, s.goals])),
           }}
           locked={post.result.loaded}
+          names={teamNamesOf(match)}
         />
       )}
     </>

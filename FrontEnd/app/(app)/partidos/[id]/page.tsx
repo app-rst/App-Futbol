@@ -9,6 +9,7 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { ConfirmAction } from "@/components/ui/confirm-action";
 import { formatDateTime, matchPhase } from "@/lib/dates";
+import { teamNamesOf } from "@/lib/teams";
 import { getMatchPost, getMatchView } from "@/lib/matches";
 import { MvpSection, ResultCard } from "@/components/match/post-match";
 import type { MatchView } from "@/lib/types";
@@ -124,7 +125,8 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
   const isCancelled = phase === "cancelled";
   // Sacar jugadores: admin del partido o admin del sistema, antes del inicio.
   const canRemove = isUpcoming && (viewer.is_admin || viewer.is_system_admin);
-  const canEditTeams = viewer.is_admin && !isCancelled && !match.result_loaded_at;
+  const canEditTeams = viewer.is_admin && !isCancelled;
+  const teamNames = teamNamesOf(match);
 
   return (
     <>
@@ -155,8 +157,8 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
 
       <MatchSummary match={match} />
 
-      {post && isFinished && <ResultCard post={post} matchId={match.id} isAdmin={viewer.is_admin} />}
-      {post && <MvpSection post={post} matchId={match.id} startersCount={match.starters_count} />}
+      {post && isFinished && <ResultCard post={post} matchId={match.id} isAdmin={viewer.is_admin} names={teamNames} />}
+      {post && <MvpSection post={post} matchId={match.id} startersCount={match.starters_count} names={teamNames} />}
 
       <MyStatus view={view} />
 
@@ -167,12 +169,13 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
         </section>
       )}
 
-      <TeamsView roster={view.roster} />
+      <TeamsView roster={view.roster} names={teamNames} />
 
       <Roster
         roster={view.roster}
         startersCount={match.starters_count}
         removeFromMatchId={canRemove ? match.id : null}
+        teamNames={teamNames}
       />
 
       {(viewer.is_admin || viewer.is_system_admin) && (
@@ -181,7 +184,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
           <div className="grid grid-cols-2 gap-2">
             {canEditTeams && (
               <Link href={`/partidos/${match.id}/equipos`} className={buttonClass("secondary")}>
-                👕 Equipos
+                {match.result_loaded_at ? "👕 Nombres de equipos" : "👕 Equipos"}
               </Link>
             )}
             {viewer.is_admin && isUpcoming && (

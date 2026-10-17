@@ -4,10 +4,11 @@ import { useActionState, useState } from "react";
 import { castVote } from "@/app/actions/results";
 import { Alert } from "@/components/ui/alert";
 import { SubmitButton } from "@/components/ui/button";
+import type { TeamNames } from "@/lib/teams";
 
 type Candidate = { user_id: string; display_name: string; team: "A" | "B" | null };
 
-export function MvpVoteForm({ matchId, candidates }: { matchId: string; candidates: Candidate[] }) {
+export function MvpVoteForm({ matchId, candidates, names }: { matchId: string; candidates: Candidate[]; names: TeamNames }) {
   const [state, action] = useActionState(castVote, {});
   const [selected, setSelected] = useState("");
   const chosen = candidates.find((c) => c.user_id === selected);
@@ -39,8 +40,8 @@ export function MvpVoteForm({ matchId, candidates }: { matchId: string; candidat
             />
             <span className="truncate font-medium">{c.display_name}</span>
             {c.team && (
-              <span className={`ml-auto text-xs font-bold ${c.team === "A" ? "text-sky-600" : "text-orange-500"}`}>
-                {c.team}
+              <span className={`ml-auto shrink-0 truncate text-xs font-bold ${c.team === "A" ? "text-sky-600" : "text-orange-500"}`}>
+                {names[c.team] ?? c.team}
               </span>
             )}
           </label>

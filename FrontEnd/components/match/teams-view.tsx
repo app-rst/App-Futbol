@@ -1,3 +1,4 @@
+import { teamLabel, type TeamNames } from "@/lib/teams";
 import type { RosterEntry } from "@/lib/types";
 
 const STYLE = {
@@ -6,7 +7,7 @@ const STYLE = {
 } as const;
 
 /** Los dos equipos lado a lado (solo si el admin ya asignó a alguien). */
-export function TeamsView({ roster }: { roster: RosterEntry[] }) {
+export function TeamsView({ roster, names }: { roster: RosterEntry[]; names: TeamNames }) {
   const starters = roster.filter((p) => p.is_starter);
   if (!starters.some((p) => p.team)) return null;
   const unassigned = starters.filter((p) => !p.team);
@@ -20,7 +21,7 @@ export function TeamsView({ roster }: { roster: RosterEntry[] }) {
           return (
             <div key={t} className={`rounded-xl border p-3 ${STYLE[t].box}`}>
               <p className={`text-sm font-bold ${STYLE[t].title}`}>
-                Equipo {t} <span className="font-normal opacity-70">({players.length})</span>
+                {teamLabel(names, t)} <span className="font-normal opacity-70">({players.length})</span>
               </p>
               <ul className="mt-1 flex flex-col gap-0.5 text-sm">
                 {players.map((p) => (
