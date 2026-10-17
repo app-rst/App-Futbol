@@ -1,7 +1,12 @@
+import { removePlayer } from "@/app/actions/enrollment";
+import { ConfirmAction } from "@/components/ui/confirm-action";
 import { formatArPhone, whatsappLink } from "@/lib/phone";
 import type { RosterEntry } from "@/lib/types";
 
-function PlayerRow({ p, label }: { p: RosterEntry; label: string }) {
+/** Si viene, el que mira puede sacar jugadores de este partido (admin, antes del inicio). */
+type RemoveCtx = { matchId: string } | null;
+
+function PlayerRow({ p, label, remove }: { p: RosterEntry; label: string; remove: RemoveCtx }) {
   return (
     <li className="flex items-center gap-3 py-2">
       <span className="w-6 shrink-0 text-right text-sm tabular-nums opacity-50">{label}</span>
@@ -21,10 +26,31 @@ function PlayerRow({ p, label }: { p: RosterEntry; label: string }) {
           </a>
         )}
       </div>
+      {p.team && (
+        <span
+          title={`Equipo ${p.team}`}
+          className={`flex size-6 items-center justify-center rounded-md text-xs font-bold text-white ${
+            p.team === "A" ? "bg-sky-600" : "bg-orange-500"
+          }`}
+        >
+          {p.team}
+        </span>
+      )}
       {p.is_admin && (
         <span className="rounded-full bg-green-700/10 px-2 py-0.5 text-xs font-semibold text-green-800 dark:text-green-300">
           Admin
         </span>
+      )}
+      {remove && !p.is_admin && (
+        <ConfirmAction
+          action={removePlayer}
+          fields={{ match_id: remove.matchId, user_id: p.user_id }}
+          confirm={`¿Sacar a ${p.display_name} del partido?${p.is_starter ? " Si hay suplentes, entra el primero." : ""}`}
+          label="Sacar"
+          pendingText="…"
+          variant="ghost"
+          className="h-9 px-2 text-sm text-red-600 dark:text-red-400"
+        />
       )}
     </li>
   );
@@ -34,7 +60,17 @@ function PlayerRow({ p, label }: { p: RosterEntry; label: string }) {
  * Titulares (X/N) y suplentes. La lista de suplentes solo aparece cuando los
  * titulares están completos (antes no puede haber suplentes).
  */
-export function Roster({ roster, startersCount }: { roster: RosterEntry[]; startersCount: number }) {
+export function Roster({
+  roster,
+  startersCount,
+  removeFromMatchId = null,
+}: {
+  roster: RosterEntry[];
+  startersCount: number;
+  /** Id del partido si el que mira puede sacar jugadores. */
+  removeFromMatchId?: string | null;
+}) {
+  const remove: RemoveCtx = removeFromMatchId ? { matchId: removeFromMatchId } : null;
   const starters = roster.filter((p) => p.is_starter);
   const subs = roster.filter((p) => !p.is_starter);
   const free = Math.max(startersCount - starters.length, 0);
@@ -57,7 +93,7 @@ export function Roster({ roster, startersCount }: { roster: RosterEntry[]; start
         </p>
         <ol className="mt-2 divide-y divide-black/5 dark:divide-white/10">
           {starters.map((p) => (
-            <PlayerRow key={p.user_id} p={p} label={String(p.position)} />
+            <PlayerRow key={p.user_id} p={p} label={String(p.position)} remove={remove} />
           ))}
         </ol>
       </div>
@@ -71,7 +107,7 @@ export function Roster({ roster, startersCount }: { roster: RosterEntry[]; start
           <p className="text-xs opacity-60">Si un titular se baja, entra el primero de esta lista.</p>
           <ol className="mt-2 divide-y divide-black/5 dark:divide-white/10">
             {subs.map((p, i) => (
-              <PlayerRow key={p.user_id} p={p} label={`S${i + 1}`} />
+              <PlayerRow key={p.user_id} p={p} label={`S${i + 1}`} remove={remove} />
             ))}
           </ol>
         </div>

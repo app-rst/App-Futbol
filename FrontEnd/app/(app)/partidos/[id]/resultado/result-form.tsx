@@ -1,0 +1,125 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { saveResult } from "@/app/actions/results";
+import { Alert } from "@/components/ui/alert";
+import { SubmitButton } from "@/components/ui/button";
+
+type Player = { user_id: string; display_name: string; team: "A" | "B" };
+
+const TEAM = {
+  A: { title: "text-sky-700 dark:text-sky-300", box: "border-sky-600/30 bg-sky-600/5" },
+  B: { title: "text-orange-600 dark:text-orange-300", box: "border-orange-500/30 bg-orange-500/5" },
+} as const;
+
+function Stepper({ value, onChange, label, big = false }: { value: number; onChange: (n: number) => void; label: string; big?: boolean }) {
+  const size = big ? "size-12 text-2xl" : "size-9 text-lg";
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(0, value - 1))}
+        disabled={value === 0}
+        aria-label={`Restar gol: ${label}`}
+        className={`${size} rounded-lg border border-black/15 font-bold disabled:opacity-30 dark:border-white/20`}
+      >
+        −
+      </button>
+      <span className={`${big ? "w-10 text-4xl" : "w-6 text-lg"} text-center font-bold tabular-nums`} aria-live="polite">
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(99, value + 1))}
+        aria-label={`Sumar gol: ${label}`}
+        className={`${size} rounded-lg border border-black/15 font-bold dark:border-white/20`}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+export function ResultForm({
+  matchId,
+  players,
+  initial,
+}: {
+  matchId: string;
+  players: Player[];
+  initial: { a: number; b: number; scorers: Record<string, number> };
+}) {
+  const [state, action] = useActionState(saveResult, {});
+  const [score, setScore] = useState({ A: initial.a, B: initial.b });
+  const [goals, setGoals] = useState<Record<string, number>>(initial.scorers);
+
+  const sumFor = (t: "A" | "B") => players.filter((p) => p.team === t).reduce((s, p) => s + (goals[p.user_id] ?? 0), 0);
+  const over = (["A", "B"] as const).filter((t) => sumFor(t) > score[t]);
+
+  const scorers = JSON.stringify(
+    Object.entries(goals)
+      .filter(([, g]) => g > 0)
+      .map(([user_id, g]) => ({ user_id, goals: g })),
+  );
+
+  return (
+    <form action={action} className="flex flex-col gap-5">
+      <input type="hidden" name="match_id" value={matchId} />
+      <input type="hidden" name="team_a_goals" value={score.A} />
+      <input type="hidden" name="team_b_goals" value={score.B} />
+      <input type="hidden" name="scorers" value={scorers} />
+      <Alert kind="error">{state.error}</Alert>
+
+      <section aria-label="Marcador" className="grid grid-cols-2 gap-3">
+        {(["A", "B"] as const).map((t) => (
+          <div key={t} className={`flex flex-col items-center gap-2 rounded-2xl border p-3 ${TEAM[t].box}`}>
+            <p className={`font-bold ${TEAM[t].title}`}>Equipo {t}</p>
+            <Stepper big label={`equipo ${t}`} value={score[t]} onChange={(n) => setScore((s) => ({ ...s, [t]: n }))} />
+          </div>
+        ))}
+      </section>
+
+      {(["A", "B"] as const).map((t) => (
+        <section key={t} className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className={`font-semibold ${TEAM[t].title}`}>Goleadores del equipo {t}</h2>
+            <span className={`text-sm tabular-nums ${over.includes(t) ? "font-bold text-red-600" : "opacity-60"}`}>
+              {sumFor(t)}/{score[t]}
+            </span>
+          </div>
+          <ul className="flex flex-col divide-y divide-black/5 dark:divide-white/10">
+            {players
+              .filter((p) => p.team === t)
+              .map((p) => (
+                <li key={p.user_id} className="flex items-center justify-between gap-2 py-1.5">
+                  <span className="truncate">
+                    {(goals[p.user_id] ?? 0) > 0 && "⚽ "}
+                    {p.display_name}
+                  </span>
+                  <Stepper
+                    label={p.display_name}
+                    value={goals[p.user_id] ?? 0}
+                    onChange={(n) => setGoals((g) => ({ ...g, [p.user_id]: n }))}
+                  />
+                </li>
+              ))}
+          </ul>
+        </section>
+      ))}
+
+      {over.length > 0 ? (
+        <Alert kind="error">
+          Los goleadores del equipo {over.join(" y ")} suman más goles que el resultado.
+        </Alert>
+      ) : (
+        <p className="text-xs opacity-60">
+          Los goleadores pueden sumar menos que el resultado (por ejemplo, goles en contra), pero nunca más.
+        </p>
+      )}
+
+      <SubmitButton disabled={over.length > 0} pendingText="Guardando…">
+        Guardar resultado
+      </SubmitButton>
+    </form>
+  );
+}

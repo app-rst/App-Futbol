@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 // Rutas accesibles sin sesión.
-const PUBLIC_PATHS = ["/login", "/registro", "/recuperar", "/auth", "/offline", "/suspendida"];
+const PUBLIC_PATHS = ["/login", "/registro", "/recuperar", "/auth", "/offline", "/suspendida", "/api/keepalive"];
 // Si ya hay sesión, estas no tienen sentido.
 const GUEST_ONLY = ["/login", "/registro"];
 
