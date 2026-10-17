@@ -105,8 +105,8 @@ La app usa **un único proyecto de Supabase** (el plan gratuito permite 2 activo
 
 | Campo | Valor |
 |---|---|
-| Site URL | `https://<tu-dominio>` (el de Vercel, por ejemplo `https://app-futbol.vercel.app`) |
-| Redirect URLs | `https://<tu-dominio>/**`, `https://*-app-rst.vercel.app/**` (previews) y `http://localhost:3000/**` (tu PC) |
+| Site URL | `https://<tu-dominio>` (el de Vercel, hoy `https://fulbito-amigos.vercel.app`) |
+| Redirect URLs | `https://<tu-dominio>/**`, `https://*-rodrigo-taira.vercel.app/**` (previews) y `http://localhost:3000/**` (tu PC) |
 
 Todos los links de auth (confirmación de email, Google y recuperar contraseña) vuelven a `/auth/callback`.
 
