@@ -11,4 +11,6 @@ export const env = {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   ),
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  // El botón de Google se muestra solo con el proveedor activado en Supabase.
+  googleAuth: process.env.NEXT_PUBLIC_GOOGLE_AUTH === "true",
 };

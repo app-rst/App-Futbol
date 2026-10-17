@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Divider, GoogleButton } from "@/components/auth/google-button";
+import { env } from "@/lib/env";
 import { safeNext } from "@/lib/safe-next";
 import { SignUpForm } from "./signup-form";
 
@@ -12,8 +13,12 @@ export default async function SignUpPage({ searchParams }: PageProps<"/registro"
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-semibold">Crear cuenta</h1>
-      <GoogleButton next={next} />
-      <Divider />
+      {env.googleAuth && (
+        <>
+          <GoogleButton next={next} />
+          <Divider />
+        </>
+      )}
       <SignUpForm next={next} />
       <p className="text-center text-sm">
         ¿Ya tenés cuenta?{" "}
