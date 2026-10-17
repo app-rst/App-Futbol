@@ -181,6 +181,7 @@ Con un SMTP propio, los emails de confirmación y de recuperación llegan bien y
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publishable key | la misma | la misma |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | *(vacía)* | `https://<tu-dominio>` |
 | `NEXT_PUBLIC_APP_ENV` | `local` | `preview` | `production` |
+| `NEXT_PUBLIC_GOOGLE_AUTH` | `false` | `false` | `true` cuando Google esté activado en Supabase (sin esto se oculta el botón) |
 | `CRON_SECRET` | *(no hace falta)* | *(no hace falta)* | texto largo aleatorio ([despertador](#costos-y-límites-del-plan-gratuito)) |
 
 Las variables `NEXT_PUBLIC_*` son públicas por diseño. La protección de los datos la da la RLS de Postgres, no ocultar la key.

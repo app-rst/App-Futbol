@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Divider, GoogleButton } from "@/components/auth/google-button";
 import { Alert } from "@/components/ui/alert";
+import { env } from "@/lib/env";
 import { safeNext } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
 
@@ -21,8 +22,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     <div className="flex flex-col gap-5">
       <h1 className="text-xl font-semibold">Iniciar sesión</h1>
       {error && <Alert kind="error">{error}</Alert>}
-      <GoogleButton next={next} />
-      <Divider />
+      {env.googleAuth && (
+        <>
+          <GoogleButton next={next} />
+          <Divider />
+        </>
+      )}
       <LoginForm next={next} />
       <div className="flex flex-col items-center gap-2 text-sm">
         <Link href={`/recuperar${qs}`} className="underline underline-offset-4 opacity-70">
