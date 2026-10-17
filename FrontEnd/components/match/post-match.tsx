@@ -55,8 +55,10 @@ export function ResultCard({ post, matchId, isAdmin }: { post: MatchPost; matchI
 }
 
 /** Votación del MVP: anónima, solo titulares, 24 h desde el fin. */
-export function MvpSection({ post, matchId }: { post: MatchPost; matchId: string }) {
+export function MvpSection({ post, matchId, startersCount }: { post: MatchPost; matchId: string; startersCount: number }) {
   const { voting, mvp } = post;
+  // Hay MVP solo si vota al menos la mitad de los titulares (ver match_mvp_winners).
+  const minVotes = Math.ceil(startersCount / 2);
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-400/10 p-4">
@@ -69,12 +71,13 @@ export function MvpSection({ post, matchId }: { post: MatchPost; matchId: string
             {mvp.length > 1 && <p className="text-sm opacity-70">Empate: compartieron el MVP.</p>}
           </div>
         ) : (
-          <p className="text-sm opacity-80">Nadie votó en este partido.</p>
+          <p className="text-sm opacity-80">Sin MVP: votaron menos de {minVotes} titulares.</p>
         )
       ) : voting.is_open ? (
         <>
           <p className="text-sm opacity-80">
             La votación cierra el <strong>{formatDateTime(voting.closes_at)}</strong>. Después se muestra el ganador.
+            Para que haya MVP tienen que votar al menos {minVotes} titulares.
           </p>
           {voting.has_voted ? (
             <p className="font-semibold text-green-800 dark:text-green-300">✓ Ya votaste. ¡Gracias!</p>

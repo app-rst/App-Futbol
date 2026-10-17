@@ -79,7 +79,10 @@ describe('historial', () => {
 
   it('el MVP aparece recién cuando cierra la votación', async () => {
     await shiftMatch(db, matchId, -2, 1);
-    await rpc(db, players[0], 'cast_mvp_vote', { p_match_id: matchId, p_candidate: players[2] });
+    // 5 de 10 titulares: el mínimo para que haya MVP.
+    for (const voter of [players[0], players[1], players[3], players[4], players[5]]) {
+      await rpc(db, voter, 'cast_mvp_vote', { p_match_id: matchId, p_candidate: players[2] });
+    }
     expect((await history(admin))[0].mvp).toBeNull();
 
     await shiftMatch(db, matchId, -30, 1);

@@ -195,7 +195,9 @@ describe('después del partido: resultado y MVP', () => {
       await finishedRecently();
       await vote(players[0], players[1]);
       await vote(players[2], players[1]);
-      await vote(players[3], players[4]);
+      await vote(players[3], players[1]);
+      await vote(players[5], players[4]);
+      await vote(players[6], players[4]);
       await finishedLongAgo();
       expect((await post(subs[0])).mvp).toEqual([{ user_id: players[1], display_name: 'J2' }]);
     });
@@ -203,9 +205,19 @@ describe('después del partido: resultado y MVP', () => {
     it('si hay empate se muestran todos los empatados', async () => {
       await finishedRecently();
       await vote(players[0], players[1]);
-      await vote(players[2], players[3]);
+      await vote(players[2], players[1]);
+      await vote(players[4], players[3]);
+      await vote(players[5], players[3]);
+      await vote(players[6], players[7]);
       await finishedLongAgo();
       expect((await post(admin)).mvp?.map((m) => m.user_id).sort()).toEqual([players[1], players[3]].sort());
+    });
+
+    it('con menos de la mitad de los titulares votando, no hay MVP', async () => {
+      await finishedRecently();
+      for (const voter of players.slice(2, 6)) await vote(voter, players[1]);
+      await finishedLongAgo();
+      expect((await post(admin)).mvp).toEqual([]);
     });
 
     it('si nadie votó, no hay MVP', async () => {
@@ -219,6 +231,8 @@ describe('después del partido: resultado y MVP', () => {
       await finishedRecently();
       await vote(players[0], players[1]);
       await vote(admin, players[1]);
+      // Hasta 5 de 10 titulares, el mínimo para que haya MVP.
+      for (const voter of players.slice(2, 5)) await vote(voter, players[1]);
     });
 
     it('nadie de la app puede leer las tablas de votos: ni jugadores, ni el admin, ni el admin del sistema', async () => {

@@ -264,6 +264,7 @@ La app entra holgada en el **plan gratuito de Supabase**:
   - `mvp_ballots` registra *que* votaste y `mvp_votes` registra *a quién* se votó, **sin votante ni fecha**;
   - ningún rol de la app puede leer esas tablas;
   - solo se publica el MVP (o los empatados) al cerrar la votación, nunca conteos;
+  - hay MVP solo si votó al menos la mitad de los titulares (redondeando para arriba: 5 de 10); si no, el partido queda sin MVP;
   - límite conocido: alguien con acceso de superusuario a la base podría intentar correlacionar el orden físico de inserción.
 - **Administrador del sistema:**
   - puede ver todos los partidos y usuarios, bloquear cuentas, cancelar y sacar jugadores como moderación (queda registrado en un log);

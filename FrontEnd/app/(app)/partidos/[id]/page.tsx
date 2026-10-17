@@ -156,7 +156,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
       <MatchSummary match={match} />
 
       {post && isFinished && <ResultCard post={post} matchId={match.id} isAdmin={viewer.is_admin} />}
-      {post && <MvpSection post={post} matchId={match.id} />}
+      {post && <MvpSection post={post} matchId={match.id} startersCount={match.starters_count} />}
 
       <MyStatus view={view} />
 
