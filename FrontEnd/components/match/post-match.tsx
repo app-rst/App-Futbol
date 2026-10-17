@@ -77,7 +77,7 @@ export function MvpSection({ post, matchId, startersCount }: { post: MatchPost; 
         <>
           <p className="text-sm opacity-80">
             La votación cierra el <strong>{formatDateTime(voting.closes_at)}</strong>. Después se muestra el ganador.
-            Para que se entregue el premio tienen que votar al menos {minVotes} titulares.
+            Para que se muestre el premio tienen que votar al menos {minVotes} titulares.
           </p>
           {voting.has_voted ? (
             <p className="font-semibold text-green-800 dark:text-green-300">✓ Ya votaste. ¡Gracias!</p>
