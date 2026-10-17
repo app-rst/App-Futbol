@@ -25,7 +25,7 @@ function HistoryCard({ m }: { m: HistoryMatch }) {
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <Link href={`/partidos/${m.id}`} className="block truncate font-semibold underline-offset-2 hover:underline">
-            {m.location}
+            📍 {m.location}
           </Link>
           <p className="text-xs opacity-60">{formatMatchWhen(m.starts_at, m.ends_at)}</p>
         </div>

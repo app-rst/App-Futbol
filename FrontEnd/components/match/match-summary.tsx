@@ -12,7 +12,10 @@ export function MatchSummary({ match }: { match: Match }) {
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <PhaseBadge phase={phase} />
+        <div className="flex items-center gap-2">
+          <PhaseBadge phase={phase} />
+          <span className="text-xs uppercase tracking-wide opacity-60">📍 Lugar</span>
+        </div>
         <h1 className="mt-1 text-2xl font-bold leading-tight">{match.location}</h1>
         <p className="text-sm opacity-70">{formatMatchWhen(match.starts_at, match.ends_at)}</p>
       </div>
