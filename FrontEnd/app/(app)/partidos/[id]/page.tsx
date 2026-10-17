@@ -9,7 +9,7 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { ConfirmAction } from "@/components/ui/confirm-action";
 import { formatDateTime, matchPhase } from "@/lib/dates";
-import { getMatchPost, getMatchView, shareText } from "@/lib/matches";
+import { getMatchPost, getMatchView } from "@/lib/matches";
 import { MvpSection, ResultCard } from "@/components/match/post-match";
 import type { MatchView } from "@/lib/types";
 
@@ -163,7 +163,7 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
       {isUpcoming && (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold opacity-70">Invitá a los pibes</h2>
-          <ShareButton inviteCode={match.invite_code} text={shareText(match)} />
+          <ShareButton inviteCode={match.invite_code} />
         </section>
       )}
 
