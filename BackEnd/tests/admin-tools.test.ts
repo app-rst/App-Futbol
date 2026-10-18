@@ -208,4 +208,35 @@ describe('herramientas del admin del partido', () => {
       await expect(assign(admin, [{ user_id: a, team: 'A' }])).rejects.toThrow(/resultado/);
     });
   });
+
+  describe('nombres de equipo', () => {
+    const rename = (userId: string, a: string | null, b: string | null) =>
+      rpc(db, userId, 'set_team_names', { p_match_id: matchId, p_team_a_name: a, p_team_b_name: b });
+    const names = async (userId: string) => {
+      const { match } = await viewMatch(db, userId, { p_match_id: matchId });
+      return [match.team_a_name, match.team_b_name];
+    };
+
+    it('el admin les pone nombre (sin espacios de más) y vacío vuelve a "sin nombre"', async () => {
+      const [player] = await joinMany(1);
+      expect(await names(player)).toEqual([null, null]);
+      await rename(admin, '  Claro ', 'Oscuro');
+      expect(await names(player)).toEqual(['Claro', 'Oscuro']);
+      await rename(admin, '', '   ');
+      expect(await names(player)).toEqual([null, null]);
+    });
+
+    it('se puede renombrar con el resultado ya cargado', async () => {
+      await db.query('update public.matches set result_loaded_at = now() where id = $1', [matchId]);
+      await rename(admin, 'Claro', null);
+      expect(await names(admin)).toEqual(['Claro', null]);
+    });
+
+    it('solo el admin, hasta 30 caracteres y sin repetir el nombre', async () => {
+      const [player] = await joinMany(1);
+      await expect(rename(player, 'Claro', 'Oscuro')).rejects.toThrow(/Solo el admin/);
+      await expect(rename(admin, 'x'.repeat(31), null)).rejects.toThrow(/30 caracteres/);
+      await expect(rename(admin, 'Claro', 'claro')).rejects.toThrow(/mismo nombre/);
+    });
+  });
 });

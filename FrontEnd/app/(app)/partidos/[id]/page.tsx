@@ -9,14 +9,15 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { ConfirmAction } from "@/components/ui/confirm-action";
 import { formatDateTime, matchPhase } from "@/lib/dates";
-import { getMatchPost, getMatchView, shareText } from "@/lib/matches";
+import { teamNamesOf } from "@/lib/teams";
+import { getMatchPost, getMatchView } from "@/lib/matches";
 import { MvpSection, ResultCard } from "@/components/match/post-match";
 import type { MatchView } from "@/lib/types";
 
 export const metadata = { title: "Partido" };
 
 /** Tu lugar en la lista: titular o suplente (con cuántos tenés adelante). */
-function MyStatus({ view, canLeave }: { view: MatchView; canLeave: boolean }) {
+function MyStatus({ view }: { view: MatchView }) {
   const { viewer, match } = view;
   if (viewer.position === null) return null;
   const subNumber = viewer.position - match.starters_count;
@@ -40,29 +41,39 @@ function MyStatus({ view, canLeave }: { view: MatchView; canLeave: boolean }) {
           </p>
         )}
       </div>
-      {canLeave &&
-        (viewer.is_admin ? (
-          <Link
-            href={`/partidos/${match.id}/transferir`}
-            className={buttonClass("secondary", "w-full text-red-600 dark:text-red-400")}
-          >
-            Bajarme (pasando el admin)
-          </Link>
-        ) : (
-          <ConfirmAction
-            action={leaveMatch}
-            fields={{ match_id: match.id }}
-            confirm={
-              viewer.is_starter
-                ? "¿Seguro que te querés bajar? Si hay suplentes, entra el primero en tu lugar."
-                : "¿Seguro que te querés bajar de la lista de suplentes?"
-            }
-            label="Bajarme del partido"
-            pendingText="Bajándote…"
-            variant="secondary"
-            className="w-full text-red-600 dark:text-red-400"
-          />
-        ))}
+    </section>
+  );
+}
+
+/** Bajarse del partido: al final de la página, para no tocarlo sin querer. */
+function LeaveSection({ view }: { view: MatchView }) {
+  const { viewer, match } = view;
+  if (viewer.position === null) return null;
+
+  return (
+    <section className="border-t border-black/10 pt-4 dark:border-white/10">
+      {viewer.is_admin ? (
+        <Link
+          href={`/partidos/${match.id}/transferir`}
+          className={buttonClass("secondary", "w-full text-red-600 dark:text-red-400")}
+        >
+          Bajarme (pasando el admin)
+        </Link>
+      ) : (
+        <ConfirmAction
+          action={leaveMatch}
+          fields={{ match_id: match.id }}
+          confirm={
+            viewer.is_starter
+              ? "¿Seguro que te querés bajar? Si hay suplentes, entra el primero en tu lugar."
+              : "¿Seguro que te querés bajar de la lista de suplentes?"
+          }
+          label="Bajarme del partido"
+          pendingText="Bajándote…"
+          variant="secondary"
+          className="w-full text-red-600 dark:text-red-400"
+        />
+      )}
     </section>
   );
 }
@@ -114,7 +125,8 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
   const isCancelled = phase === "cancelled";
   // Sacar jugadores: admin del partido o admin del sistema, antes del inicio.
   const canRemove = isUpcoming && (viewer.is_admin || viewer.is_system_admin);
-  const canEditTeams = viewer.is_admin && !isCancelled && !match.result_loaded_at;
+  const canEditTeams = viewer.is_admin && !isCancelled;
+  const teamNames = teamNamesOf(match);
 
   return (
     <>
@@ -145,33 +157,34 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
 
       <MatchSummary match={match} />
 
-      {post && isFinished && <ResultCard post={post} matchId={match.id} isAdmin={viewer.is_admin} />}
-      {post && <MvpSection post={post} matchId={match.id} />}
+      {post && isFinished && <ResultCard post={post} matchId={match.id} isAdmin={viewer.is_admin} names={teamNames} />}
+      {post && <MvpSection post={post} matchId={match.id} startersCount={match.starters_count} names={teamNames} />}
 
-      <MyStatus view={view} canLeave={isUpcoming} />
+      <MyStatus view={view} />
 
       {isUpcoming && (
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold opacity-70">Invitá a los pibes</h2>
-          <ShareButton inviteCode={match.invite_code} text={shareText(match)} />
+          <ShareButton inviteCode={match.invite_code} />
         </section>
       )}
 
-      <TeamsView roster={view.roster} />
+      <TeamsView roster={view.roster} names={teamNames} />
 
       <Roster
         roster={view.roster}
         startersCount={match.starters_count}
         removeFromMatchId={canRemove ? match.id : null}
+        teamNames={teamNames}
       />
 
-      {(viewer.is_admin || viewer.can_duplicate || viewer.is_system_admin) && (
+      {(viewer.is_admin || viewer.is_system_admin) && (
         <section className="flex flex-col gap-2 border-t border-black/10 pt-4 dark:border-white/10">
           <h2 className="text-sm font-semibold opacity-70">Opciones de admin</h2>
           <div className="grid grid-cols-2 gap-2">
             {canEditTeams && (
               <Link href={`/partidos/${match.id}/equipos`} className={buttonClass("secondary")}>
-                👕 Equipos
+                {match.result_loaded_at ? "👕 Nombres de equipos" : "👕 Equipos"}
               </Link>
             )}
             {viewer.is_admin && isUpcoming && (
@@ -179,15 +192,12 @@ export default async function MatchPage({ params, searchParams }: PageProps<"/pa
                 ✏️ Editar
               </Link>
             )}
-            {viewer.can_duplicate && (
-              <Link href={`/partidos/nuevo?duplicar=${match.id}`} className={buttonClass("secondary")}>
-                📋 Duplicar
-              </Link>
-            )}
           </div>
           <CancelSection view={view} />
         </section>
       )}
+
+      {isUpcoming && <LeaveSection view={view} />}
     </>
   );
 }

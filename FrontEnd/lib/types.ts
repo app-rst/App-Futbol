@@ -16,6 +16,8 @@ export type Match = {
   team_a_goals: number | null;
   team_b_goals: number | null;
   result_loaded_at: string | null;
+  team_a_name: string | null;
+  team_b_name: string | null;
 };
 
 export type RosterEntry = {
@@ -75,6 +77,7 @@ export type HistoryMatch = {
   my_team: "A" | "B" | null;
   result: { loaded: boolean; team_a_goals: number | null; team_b_goals: number | null };
   teams: { A: string[]; B: string[] };
+  team_names: { A: string | null; B: string | null };
   scorers: Array<{ display_name: string; team: "A" | "B" | null; goals: number }>;
   /** null mientras la votación sigue abierta; [] si nadie votó. */
   mvp: Array<{ display_name: string }> | null;

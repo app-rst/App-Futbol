@@ -1,12 +1,13 @@
 import { removePlayer } from "@/app/actions/enrollment";
 import { ConfirmAction } from "@/components/ui/confirm-action";
 import { formatArPhone, whatsappLink } from "@/lib/phone";
+import { teamLabel, type TeamNames } from "@/lib/teams";
 import type { RosterEntry } from "@/lib/types";
 
 /** Si viene, el que mira puede sacar jugadores de este partido (admin, antes del inicio). */
 type RemoveCtx = { matchId: string } | null;
 
-function PlayerRow({ p, label, remove }: { p: RosterEntry; label: string; remove: RemoveCtx }) {
+function PlayerRow({ p, label, remove, names }: { p: RosterEntry; label: string; remove: RemoveCtx; names?: TeamNames }) {
   return (
     <li className="flex items-center gap-3 py-2">
       <span className="w-6 shrink-0 text-right text-sm tabular-nums opacity-50">{label}</span>
@@ -28,7 +29,7 @@ function PlayerRow({ p, label, remove }: { p: RosterEntry; label: string; remove
       </div>
       {p.team && (
         <span
-          title={`Equipo ${p.team}`}
+          title={teamLabel(names, p.team)}
           className={`flex size-6 items-center justify-center rounded-md text-xs font-bold text-white ${
             p.team === "A" ? "bg-sky-600" : "bg-orange-500"
           }`}
@@ -64,11 +65,13 @@ export function Roster({
   roster,
   startersCount,
   removeFromMatchId = null,
+  teamNames,
 }: {
   roster: RosterEntry[];
   startersCount: number;
   /** Id del partido si el que mira puede sacar jugadores. */
   removeFromMatchId?: string | null;
+  teamNames?: TeamNames;
 }) {
   const remove: RemoveCtx = removeFromMatchId ? { matchId: removeFromMatchId } : null;
   const starters = roster.filter((p) => p.is_starter);
@@ -93,7 +96,7 @@ export function Roster({
         </p>
         <ol className="mt-2 divide-y divide-black/5 dark:divide-white/10">
           {starters.map((p) => (
-            <PlayerRow key={p.user_id} p={p} label={String(p.position)} remove={remove} />
+            <PlayerRow key={p.user_id} p={p} label={String(p.position)} remove={remove} names={teamNames} />
           ))}
         </ol>
       </div>
@@ -107,7 +110,7 @@ export function Roster({
           <p className="text-xs opacity-60">Si un titular se baja, entra el primero de esta lista.</p>
           <ol className="mt-2 divide-y divide-black/5 dark:divide-white/10">
             {subs.map((p, i) => (
-              <PlayerRow key={p.user_id} p={p} label={`S${i + 1}`} remove={remove} />
+              <PlayerRow key={p.user_id} p={p} label={`S${i + 1}`} remove={remove} names={teamNames} />
             ))}
           </ol>
         </div>

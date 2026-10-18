@@ -42,16 +42,27 @@ export async function transferAdminAndLeave(_prev: ActionState, formData: FormDa
 export async function saveTeams(_prev: ActionState, formData: FormData): Promise<ActionState> {
   await requireSession();
   const matchId = String(formData.get("match_id") ?? "");
-  let assignments: unknown;
+  // Sin "assignments" (resultado ya cargado) solo se guardan los nombres.
+  const rawAssignments = formData.get("assignments");
+  let assignments: unknown = null;
   try {
-    assignments = JSON.parse(String(formData.get("assignments") ?? "[]"));
+    if (rawAssignments !== null) assignments = JSON.parse(String(rawAssignments));
   } catch {
     return { error: "Datos inválidos." };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("set_teams", { p_match_id: matchId, p_assignments: assignments });
-  if (error) return { error: dbErrorMessage(error, "No se pudieron guardar los equipos.") };
+  const names = await supabase.rpc("set_team_names", {
+    p_match_id: matchId,
+    p_team_a_name: String(formData.get("team_a_name") ?? ""),
+    p_team_b_name: String(formData.get("team_b_name") ?? ""),
+  });
+  if (names.error) return { error: dbErrorMessage(names.error, "No se pudieron guardar los nombres de los equipos.") };
+
+  if (assignments !== null) {
+    const { error } = await supabase.rpc("set_teams", { p_match_id: matchId, p_assignments: assignments });
+    if (error) return { error: dbErrorMessage(error, "No se pudieron guardar los equipos.") };
+  }
 
   revalidatePath(`/partidos/${matchId}`);
   redirect(`/partidos/${matchId}?equipos=1`);

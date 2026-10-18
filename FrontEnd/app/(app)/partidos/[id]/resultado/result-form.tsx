@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { saveResult } from "@/app/actions/results";
 import { Alert } from "@/components/ui/alert";
 import { SubmitButton } from "@/components/ui/button";
+import { teamLabel, type TeamNames } from "@/lib/teams";
 
 type Player = { user_id: string; display_name: string; team: "A" | "B" };
 
@@ -44,17 +45,24 @@ export function ResultForm({
   matchId,
   players,
   initial,
+  locked,
+  names,
 }: {
   matchId: string;
   players: Player[];
   initial: { a: number; b: number; scorers: Record<string, number> };
+  /** Resultado ya guardado: el marcador queda fijo y solo se editan los goleadores. */
+  locked: boolean;
+  names: TeamNames;
 }) {
   const [state, action] = useActionState(saveResult, {});
   const [score, setScore] = useState({ A: initial.a, B: initial.b });
   const [goals, setGoals] = useState<Record<string, number>>(initial.scorers);
 
+  // Un campo vacío (NaN mientras se escribe) cuenta como 0.
+  const goalsOf = (t: "A" | "B") => (Number.isNaN(score[t]) ? 0 : score[t]);
   const sumFor = (t: "A" | "B") => players.filter((p) => p.team === t).reduce((s, p) => s + (goals[p.user_id] ?? 0), 0);
-  const over = (["A", "B"] as const).filter((t) => sumFor(t) > score[t]);
+  const over = (["A", "B"] as const).filter((t) => sumFor(t) > goalsOf(t));
 
   const scorers = JSON.stringify(
     Object.entries(goals)
@@ -63,28 +71,53 @@ export function ResultForm({
   );
 
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <form
+      action={action}
+      className="flex flex-col gap-5"
+      onSubmit={(e) => {
+        const msg = `¿Guardar el resultado ${goalsOf("A")}–${goalsOf("B")}? Después no se puede cambiar el marcador, solo los goleadores.`;
+        if (!locked && !window.confirm(msg)) e.preventDefault();
+      }}
+    >
       <input type="hidden" name="match_id" value={matchId} />
-      <input type="hidden" name="team_a_goals" value={score.A} />
-      <input type="hidden" name="team_b_goals" value={score.B} />
+      <input type="hidden" name="team_a_goals" value={goalsOf("A")} />
+      <input type="hidden" name="team_b_goals" value={goalsOf("B")} />
       <input type="hidden" name="scorers" value={scorers} />
       <Alert kind="error">{state.error}</Alert>
 
       <section aria-label="Marcador" className="grid grid-cols-2 gap-3">
         {(["A", "B"] as const).map((t) => (
           <div key={t} className={`flex flex-col items-center gap-2 rounded-2xl border p-3 ${TEAM[t].box}`}>
-            <p className={`font-bold ${TEAM[t].title}`}>Equipo {t}</p>
-            <Stepper big label={`equipo ${t}`} value={score[t]} onChange={(n) => setScore((s) => ({ ...s, [t]: n }))} />
+            <p className={`max-w-full truncate font-bold ${TEAM[t].title}`}>{teamLabel(names, t)}</p>
+            {locked ? (
+              <span className="text-4xl font-bold tabular-nums">{score[t]}</span>
+            ) : (
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={99}
+                aria-label={`Goles de ${teamLabel(names, t)}`}
+                value={Number.isNaN(score[t]) ? "" : score[t]}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => {
+                  const n = e.target.value === "" ? NaN : Math.min(99, Math.max(0, Math.trunc(Number(e.target.value))));
+                  setScore((s) => ({ ...s, [t]: n }));
+                }}
+                className="h-16 w-24 rounded-xl border border-black/15 bg-white text-center text-4xl font-bold tabular-nums outline-none focus:border-green-700 focus:ring-2 focus:ring-green-700/20 dark:border-white/15 dark:bg-white/5"
+              />
+            )}
           </div>
         ))}
       </section>
+      {locked && <p className="-mt-3 text-xs opacity-70">🔒 El resultado ya está guardado y no se puede cambiar.</p>}
 
       {(["A", "B"] as const).map((t) => (
         <section key={t} className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between">
-            <h2 className={`font-semibold ${TEAM[t].title}`}>Goleadores del equipo {t}</h2>
+            <h2 className={`font-semibold ${TEAM[t].title}`}>Goleadores de {teamLabel(names, t)}</h2>
             <span className={`text-sm tabular-nums ${over.includes(t) ? "font-bold text-red-600" : "opacity-60"}`}>
-              {sumFor(t)}/{score[t]}
+              {sumFor(t)}/{goalsOf(t)}
             </span>
           </div>
           <ul className="flex flex-col divide-y divide-black/5 dark:divide-white/10">
@@ -109,7 +142,7 @@ export function ResultForm({
 
       {over.length > 0 ? (
         <Alert kind="error">
-          Los goleadores del equipo {over.join(" y ")} suman más goles que el resultado.
+          Los goleadores de {over.map((t) => teamLabel(names, t)).join(" y ")} suman más goles que el resultado.
         </Alert>
       ) : (
         <p className="text-xs opacity-60">
@@ -118,7 +151,7 @@ export function ResultForm({
       )}
 
       <SubmitButton disabled={over.length > 0} pendingText="Guardando…">
-        Guardar resultado
+        {locked ? "Guardar goleadores" : "Guardar resultado"}
       </SubmitButton>
     </form>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonClass } from "@/components/ui/button-styles";
 import { formatDate, formatMatchWhen } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
+import { teamLabel } from "@/lib/teams";
 import type { HistoryMatch } from "@/lib/types";
 
 export const metadata = { title: "Historial" };
@@ -25,7 +26,7 @@ function HistoryCard({ m }: { m: HistoryMatch }) {
       <header className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <Link href={`/partidos/${m.id}`} className="block truncate font-semibold underline-offset-2 hover:underline">
-            {m.location}
+            📍 {m.location}
           </Link>
           <p className="text-xs opacity-60">{formatMatchWhen(m.starts_at, m.ends_at)}</p>
         </div>
@@ -39,7 +40,7 @@ function HistoryCard({ m }: { m: HistoryMatch }) {
               {i === 1 && <span className="opacity-30">–</span>}
               <div className="text-center">
                 <p className={`text-xs font-bold ${TEAM_TEXT[t]}`}>
-                  Equipo {t}
+                  {teamLabel(m.team_names, t)}
                   {m.my_team === t && " (vos)"}
                 </p>
                 <p className="text-3xl font-black tabular-nums">{t === "A" ? m.result.team_a_goals : m.result.team_b_goals}</p>
@@ -65,9 +66,9 @@ function HistoryCard({ m }: { m: HistoryMatch }) {
       <p className="text-sm">
         🏆{" "}
         {m.mvp === null ? (
-          <span className="opacity-60">Votación del MVP abierta</span>
+          <span className="opacity-60">Votación del Premio Lio Messi abierta</span>
         ) : m.mvp.length === 0 ? (
-          <span className="opacity-60">Sin MVP (nadie votó)</span>
+          <span className="opacity-60">Sin Premio Lio Messi (votaron menos de la mitad)</span>
         ) : (
           <strong>{m.mvp.map((x) => x.display_name).join(" y ")}</strong>
         )}
@@ -79,7 +80,7 @@ function HistoryCard({ m }: { m: HistoryMatch }) {
           <div className="mt-2 grid grid-cols-2 gap-3">
             {(["A", "B"] as const).map((t) => (
               <ul key={t}>
-                <li className={`font-bold ${TEAM_TEXT[t]}`}>Equipo {t}</li>
+                <li className={`truncate font-bold ${TEAM_TEXT[t]}`}>{teamLabel(m.team_names, t)}</li>
                 {m.teams[t].map((name, i) => (
                   <li key={`${name}-${i}`} className="truncate">
                     {name}

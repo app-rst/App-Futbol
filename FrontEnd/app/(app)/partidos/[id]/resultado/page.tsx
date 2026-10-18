@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button-styles";
 import { isPast } from "@/lib/dates";
 import { getMatchPost, getMatchView } from "@/lib/matches";
+import { teamNamesOf } from "@/lib/teams";
 import { ResultForm } from "./result-form";
 
 export const metadata = { title: "Resultado" };
@@ -24,8 +25,12 @@ export default async function ResultPage({ params }: PageProps<"/partidos/[id]/r
         <Link href={`/partidos/${id}`} className="text-sm opacity-60">
           ← Volver al partido
         </Link>
-        <h1 className="text-2xl font-bold">{post.result.loaded ? "Editar resultado" : "Cargar resultado"}</h1>
-        <p className="text-sm opacity-70">Goles de cada equipo y quiénes los hicieron.</p>
+        <h1 className="text-2xl font-bold">{post.result.loaded ? "Editar goleadores" : "Cargar resultado"}</h1>
+        <p className="text-sm opacity-70">
+          {post.result.loaded
+            ? "El resultado quedó fijo; podés corregir quién hizo los goles."
+            : "Goles de cada equipo y quiénes los hicieron."}
+        </p>
       </header>
 
       {missingTeam.length > 0 ? (
@@ -47,6 +52,8 @@ export default async function ResultPage({ params }: PageProps<"/partidos/[id]/r
             b: post.result.team_b_goals ?? 0,
             scorers: Object.fromEntries(post.scorers.map((s) => [s.user_id, s.goals])),
           }}
+          locked={post.result.loaded}
+          names={teamNamesOf(match)}
         />
       )}
     </>

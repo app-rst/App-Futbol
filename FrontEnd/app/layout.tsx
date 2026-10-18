@@ -11,7 +11,7 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: { default: "Fulbito", template: "%s · Fulbito" },
-  description: "Organizá partidos de fútbol con amigos: anotate, armá equipos y votá al MVP.",
+  description: "Organizá partidos de fútbol con amigos: anotate, armá equipos y votá el Premio Lio Messi.",
   applicationName: "Fulbito",
   appleWebApp: { capable: true, title: "Fulbito", statusBarStyle: "default" },
   icons: { apple: "/pwa-icon/192" },

@@ -29,7 +29,7 @@ export function MatchCard({ match, extra }: { match: CardMatch; extra?: React.Re
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <p className="truncate font-semibold">{match.location}</p>
+          <p className="truncate font-semibold">📍 {match.location}</p>
           <PhaseBadge phase={phase} />
         </div>
         <p className="text-sm opacity-70">

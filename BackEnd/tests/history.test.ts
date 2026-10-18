@@ -8,6 +8,7 @@ type HistoryItem = {
   my_team: 'A' | 'B' | null;
   result: { loaded: boolean; team_a_goals: number | null; team_b_goals: number | null };
   teams: { A: string[]; B: string[] };
+  team_names: { A: string | null; B: string | null };
   scorers: Array<{ display_name: string; team: string; goals: number }>;
   mvp: Array<{ display_name: string }> | null;
 };
@@ -79,11 +80,21 @@ describe('historial', () => {
 
   it('el MVP aparece recién cuando cierra la votación', async () => {
     await shiftMatch(db, matchId, -2, 1);
-    await rpc(db, players[0], 'cast_mvp_vote', { p_match_id: matchId, p_candidate: players[2] });
+    // 5 de 10 titulares: el mínimo para que haya MVP.
+    for (const voter of [players[0], players[1], players[3], players[4], players[5]]) {
+      await rpc(db, voter, 'cast_mvp_vote', { p_match_id: matchId, p_candidate: players[2] });
+    }
     expect((await history(admin))[0].mvp).toBeNull();
 
     await shiftMatch(db, matchId, -30, 1);
     expect((await history(admin))[0].mvp).toEqual([{ display_name: 'J3' }]);
+  });
+
+  it('incluye los nombres de equipo (null si no tienen)', async () => {
+    await shiftMatch(db, matchId, -30, 1);
+    expect((await history(admin))[0].team_names).toEqual({ A: null, B: null });
+    await rpc(db, admin, 'set_team_names', { p_match_id: matchId, p_team_a_name: 'Claro', p_team_b_name: 'Oscuro' });
+    expect((await history(players[0]))[0].team_names).toEqual({ A: 'Claro', B: 'Oscuro' });
   });
 
   it('sin votos, el MVP queda vacío', async () => {

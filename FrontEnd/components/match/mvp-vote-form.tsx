@@ -4,10 +4,11 @@ import { useActionState, useState } from "react";
 import { castVote } from "@/app/actions/results";
 import { Alert } from "@/components/ui/alert";
 import { SubmitButton } from "@/components/ui/button";
+import type { TeamNames } from "@/lib/teams";
 
 type Candidate = { user_id: string; display_name: string; team: "A" | "B" | null };
 
-export function MvpVoteForm({ matchId, candidates }: { matchId: string; candidates: Candidate[] }) {
+export function MvpVoteForm({ matchId, candidates, names }: { matchId: string; candidates: Candidate[]; names: TeamNames }) {
   const [state, action] = useActionState(castVote, {});
   const [selected, setSelected] = useState("");
   const chosen = candidates.find((c) => c.user_id === selected);
@@ -16,14 +17,14 @@ export function MvpVoteForm({ matchId, candidates }: { matchId: string; candidat
     <form
       action={action}
       onSubmit={(e) => {
-        if (chosen && !window.confirm(`¿Votar a ${chosen.display_name} como MVP? No se puede cambiar.`)) e.preventDefault();
+        if (chosen && !window.confirm(`¿Votar a ${chosen.display_name} para el Premio Lio Messi? No se puede cambiar.`)) e.preventDefault();
       }}
       className="flex flex-col gap-3"
     >
       <input type="hidden" name="match_id" value={matchId} />
       <Alert kind="error">{state.error}</Alert>
       <fieldset className="grid grid-cols-2 gap-2">
-        <legend className="sr-only">Elegí al MVP</legend>
+        <legend className="sr-only">Elegí al ganador del Premio Lio Messi</legend>
         {candidates.map((c) => (
           <label
             key={c.user_id}
@@ -39,8 +40,8 @@ export function MvpVoteForm({ matchId, candidates }: { matchId: string; candidat
             />
             <span className="truncate font-medium">{c.display_name}</span>
             {c.team && (
-              <span className={`ml-auto text-xs font-bold ${c.team === "A" ? "text-sky-600" : "text-orange-500"}`}>
-                {c.team}
+              <span className={`ml-auto shrink-0 truncate text-xs font-bold ${c.team === "A" ? "text-sky-600" : "text-orange-500"}`}>
+                {names[c.team] ?? c.team}
               </span>
             )}
           </label>

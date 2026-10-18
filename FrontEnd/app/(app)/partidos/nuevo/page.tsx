@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createMatch } from "@/app/actions/matches";
-import { MatchForm, type MatchFormValues } from "@/components/match-form";
-import { Alert } from "@/components/ui/alert";
+import { MatchForm, type MatchFormValues, type MatchTemplate } from "@/components/match-form";
 import { utcToLocalParts } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,7 +29,7 @@ type Template = {
 };
 
 /**
- * Al duplicar se copian todos los datos. Las fechas se corren de a una semana
+ * Se copian todos los datos del partido anterior. Las fechas se corren de a una semana
  * hasta que queden en el futuro (mismo día y horario), conservando la
  * anticipación del límite de inscripción.
  */
@@ -53,19 +52,32 @@ function fromTemplate(t: Template): MatchFormValues {
   };
 }
 
-export default async function NewMatchPage({ searchParams }: PageProps<"/partidos/nuevo">) {
-  const { duplicar } = await searchParams;
-  const duplicateId = typeof duplicar === "string" ? duplicar : null;
+/** Hasta cuántos lugares distintos se sugieren. */
+const MAX_TEMPLATES = 20;
 
-  let initial = EMPTY;
-  let duplicateError = false;
-  if (duplicateId) {
-    const supabase = await createClient();
-    const { data } = await supabase.rpc("get_match_template", { p_match_id: duplicateId }).maybeSingle<Template>();
-    if (data) initial = fromTemplate(data);
-    else duplicateError = true;
+/** Tu último partido organizado en cada lugar, para autocompletar al escribirlo. */
+async function loadTemplates(): Promise<MatchTemplate[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("my_matches");
+  const latest = new Map<string, string>();
+  for (const m of ((data ?? []) as { id: string; location: string; starts_at: string; is_admin: boolean }[])
+    .filter((m) => m.is_admin)
+    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))) {
+    const key = m.location.trim().toLowerCase();
+    if (!latest.has(key) && latest.size < MAX_TEMPLATES) latest.set(key, m.id);
   }
-  const duplicating = duplicateId && !duplicateError;
+
+  const templates = await Promise.all(
+    [...latest.values()].map(async (id) => {
+      const { data: t } = await supabase.rpc("get_match_template", { p_match_id: id }).maybeSingle<Template>();
+      return t ? { id, values: fromTemplate(t) } : null;
+    }),
+  );
+  return templates.filter((t) => t !== null);
+}
+
+export default async function NewMatchPage() {
+  const templates = await loadTemplates();
 
   return (
     <>
@@ -73,18 +85,13 @@ export default async function NewMatchPage({ searchParams }: PageProps<"/partido
         <Link href="/" className="text-sm opacity-60">
           ← Volver
         </Link>
-        <h1 className="text-2xl font-bold">{duplicating ? "Duplicar partido" : "Crear partido"}</h1>
-        <p className="text-sm opacity-70">
-          {duplicating
-            ? "Copiamos los datos del partido anterior. Revisalos antes de guardar: la lista de jugadores arranca vacía."
-            : "Vas a quedar como admin y anotado como titular."}
-        </p>
+        <h1 className="text-2xl font-bold">Crear partido</h1>
+        <p className="text-sm opacity-70">Vas a quedar como admin y anotado como titular.</p>
       </header>
-      {duplicateError && <Alert kind="error">No encontramos el partido para duplicar. Completá los datos a mano.</Alert>}
       <MatchForm
         action={createMatch}
-        initial={initial}
-        hidden={duplicating ? { duplicated_from: duplicateId } : {}}
+        initial={EMPTY}
+        templates={templates}
         submitLabel="Crear partido"
         pendingText="Creando…"
       />
